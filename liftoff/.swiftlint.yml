@@ -1,0 +1,30 @@
+disabled_rules: # rule identifiers to exclude from running
+- type_name
+- valid_docs
+- todo
+- legacy_constructor
+- variable_name
+- force_cast
+- line_length
+- variable_name_min_length
+- force_try
+  # Find all the available rules by running:
+  # swiftlint rules
+excluded: # paths to ignore during linting.
+  - <%= project_name %>/R.Swift
+  - Pods
+# parameterized rules can be customized from this configuration file
+# parameterized rules are first parameterized as a warning level, then error level.
+type_body_length:
+  - 350 # warning
+  - 450 # error
+# parameterized rules are first parameterized as a warning level, then error level.
+variable_name_max_length:
+  - 50 # warning
+  - 80 # error
+function_body_length:
+  - 140 # warning
+  - 200 # error
+file_length:
+  - 500 # warning
+  - 1000 # error
