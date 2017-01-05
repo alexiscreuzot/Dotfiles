@@ -10,3 +10,4 @@ ln -s ~/Dotfiles/bash_profile ~/.bash_profile
 ```
 
 You can follow the same procedure for each dotfile you want to version. Create a folder dedicated to it in the `Dotfile` directory, then symlink to it in `~`.
+Alternatively, you can put any new symlink creation directly into `~/Dotfiles/bash_profile` so it gets done automatically when launching a new terminal.
