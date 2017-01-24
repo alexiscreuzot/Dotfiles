@@ -105,7 +105,6 @@ app_target_templates:
         - Nibs:
           - LaunchScreen.xib
         - Other-Sources:
-          - .swiftlint.yml
           - Info.plist
       - R.Swift:
         - R.generated.swift
