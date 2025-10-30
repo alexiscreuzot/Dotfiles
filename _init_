@@ -1,0 +1,11 @@
+# ::::::::::::::::::::::::::::::::::::::
+# Load the shell dotfiles, and then some:
+# ::::::::::::::::::::::::::::::::::::::
+
+DOTFILES_DIR="$HOME/Documents/Dotfiles"
+
+for file in "$DOTFILES_DIR"/{path,aliases,functions}; do
+    [ -r "$file" ] && [ -f "$file" ] && source "$file";
+done;
+unset file;
+

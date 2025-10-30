@@ -1,2 +1,0 @@
-PROJECT_NAME = <%= project_name %>
-PLIST_PATH = "<%= project_name %>/Resources/Other-Sources/Info.plist"
