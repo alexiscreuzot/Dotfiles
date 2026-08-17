@@ -68,6 +68,22 @@ cask "proxy-audio-device"
 cask "basictex"
 cask "prince"
 
+# Casks — apps
+cask "bitwarden"
+cask "iina"
+cask "arc"
+cask "iterm2"
+cask "raycast"
+cask "rectangle"
+cask "slack"
+cask "zoom"
+cask "proxyman"
+cask "github"
+cask "numi"
+cask "obs"
+cask "nordvpn"
+cask "loopback"
+
 # VS Code extensions
 vscode "esbenp.prettier-vscode"
 vscode "github.vscode-github-actions"

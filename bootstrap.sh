@@ -29,6 +29,17 @@ if [ ! -f "$HOME/.config/chezmoi/key.txt" ]; then
     chmod 600 "$HOME/.config/chezmoi/key.txt"
 fi
 
+echo "==> SSH key"
+if [ ! -f "$HOME/.ssh/id_ed25519" ]; then
+    ssh-keygen -t ed25519 -f "$HOME/.ssh/id_ed25519"
+    echo ""
+    echo "Add this public key to GitHub (https://github.com/settings/ssh/new):"
+    echo ""
+    cat "$HOME/.ssh/id_ed25519.pub"
+    echo ""
+    read -r -p "Press Enter once added..."
+fi
+
 echo "==> Applying dotfiles (this also installs all Brewfile packages)"
 chezmoi init --apply --source "$DOTFILES_DIR"
 

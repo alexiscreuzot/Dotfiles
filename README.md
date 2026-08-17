@@ -32,6 +32,7 @@ runs automation scripts:
 | File | Purpose |
 |------|---------|
 | `path`, `aliases`, `functions` | Shell fragments sourced by `.zshrc` |
+| `dot_*`, `private_dot_ssh/`, `private_Library/` | Managed dotfiles & app configs (git, ssh, zed, gh, editors) |
 | `Brewfile` | All brew formulae, casks, VS Code extensions |
 | `run_onchange_before_10-brew-bundle.sh.tmpl` | Re-runs `brew bundle` when the Brewfile changes |
 | `run_once_after_20-oh-my-zsh.sh` | Installs oh-my-zsh if missing |
@@ -61,7 +62,9 @@ defaults script re-run automatically on the next `apply`.
 
 ## Notes
 
-- `cursor` and `sublime-text` casks warn on machines where the apps were installed
-  manually. Adopt them with `brew install --cask --force <name>` (app closed).
-- Git and SSH configs are intentionally unmanaged; `chezmoi add ~/.gitconfig` if
-  that changes.
+- SSH *keys* are not managed — `bootstrap.sh` generates a fresh `id_ed25519` on
+  new machines and prints it for adding to GitHub. Only `~/.ssh/config` is managed.
+- Apps installed outside brew before this setup warn on `brew bundle`; adopt them
+  with `brew install --cask --force <name>` (app closed).
+- Sublime Text: settings are managed, but Package Control itself installs manually
+  on first launch (Command Palette → Install Package Control).
