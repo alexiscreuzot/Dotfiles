@@ -1,4 +1,11 @@
+#   Aliases
+#   ------------------------------------------------------------
+
 # Shortcuts
+alias dev="cd ~/Developer/"
+alias g="git"
+alias h="history"
+alias j="jobs"
 alias c="clear"
 
 # Bundle
@@ -6,16 +13,33 @@ alias bi="bundle install"
 alias be="bundle exec"
 alias bef="bundle exec fastlane"
 alias serve="bundle exec jekyll serve"
-alias webui='source ~/open-webui/bin/activate && export OLLAMA_BASE_URL=http://localhost:11434 && open-webui serve'
 
-# Open Sublime
-alias sm='open -a "Sublime Text"'
+# Editors
+alias sm='subl'
 alias vs='open -a "Visual Studio Code"'
+code () { VSCODE_CWD="$PWD" open -n -b "com.microsoft.VSCode" --args $* ;}
 
 # IP addresses
 alias ip="dig +short myip.opendns.com @resolver1.opendns.com"
 alias localip="ipconfig getifaddr en0"
 alias ips="ifconfig -a | grep -o 'inet6\? \(addr:\)\?\s\?\(\(\([0-9]\+\.\)\{3\}[0-9]\+\)\|[a-fA-F0-9:]\+\)' | awk '{ sub(/inet6? (addr:)? ?/, \"\"); print }'"
+alias myip="curl -s ifconfig.me"
+
+# Flush Directory Service cache
+alias flush="dscacheutil -flushcache && killall -HUP mDNSResponder"
+
+# Clean up LaunchServices to remove duplicates in the "Open With" menu
+alias lscleanup="/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -kill -r -domain local -domain system -domain user && killall Finder"
+
+# View HTTP traffic
+alias sniff="sudo ngrep -d 'en1' -t '^(GET|POST) ' 'tcp and port 80'"
+alias httpdump="sudo tcpdump -i en1 -n -s 0 -w - | grep -a -o -E \"Host\: .*|GET \/.*\""
+
+# macOS has no `md5sum`, so use `md5` as a fallback
+command -v md5sum > /dev/null || alias md5sum="md5"
+
+# macOS has no `sha1sum`, so use `shasum` as a fallback
+command -v sha1sum > /dev/null || alias sha1sum="shasum"
 
 # Recursively delete `.DS_Store` files
 alias cleanup="find . -type f -name '*.DS_Store' -ls -delete"
@@ -23,6 +47,10 @@ alias cleanup="find . -type f -name '*.DS_Store' -ls -delete"
 # Show/hide hidden files in Finder
 alias show="defaults write com.apple.finder AppleShowAllFiles -bool true && killall Finder"
 alias hide="defaults write com.apple.finder AppleShowAllFiles -bool false && killall Finder"
+
+# Hide/show all desktop icons (useful when presenting)
+alias hidedesktop="defaults write com.apple.finder CreateDesktop -bool false && killall Finder"
+alias showdesktop="defaults write com.apple.finder CreateDesktop -bool true && killall Finder"
 
 # Git shortcuts (in addition to oh-my-zsh git plugin)
 alias gs="git status"
@@ -40,5 +68,7 @@ alias python="python3"
 alias pip="pip3"
 
 # System utilities
-alias ports="lsof -PiTCP -sTCP:LISTEN"  # Show listening ports
-alias myip="curl -s ifconfig.me"  # Get public IP quickly
+alias ports="lsof -PiTCP -sTCP:LISTEN"
+
+# URL-encode strings
+alias urlencode='python3 -c "import sys, urllib.parse; print(urllib.parse.quote_plus(sys.argv[1]))"'
