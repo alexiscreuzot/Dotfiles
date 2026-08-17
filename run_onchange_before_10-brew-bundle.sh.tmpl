@@ -1,0 +1,14 @@
+#!/bin/bash
+# Re-runs whenever the Brewfile changes.
+# Brewfile hash: {{ include "Brewfile" | sha256sum }}
+
+if ! command -v brew >/dev/null 2>&1; then
+    echo "Homebrew not found, skipping brew bundle"
+    exit 0
+fi
+
+# Don't hard-fail: casks for apps already installed manually (e.g. VS Code)
+# report an error under brew bundle. Adopt them with:
+#   brew install --cask --force <name>
+brew bundle --file="{{ .chezmoi.sourceDir }}/Brewfile" || \
+    echo "warning: some Brewfile entries failed — see output above"

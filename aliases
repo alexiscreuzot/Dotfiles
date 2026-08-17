@@ -6,6 +6,7 @@ alias bi="bundle install"
 alias be="bundle exec"
 alias bef="bundle exec fastlane"
 alias serve="bundle exec jekyll serve"
+alias webui='source ~/open-webui/bin/activate && export OLLAMA_BASE_URL=http://localhost:11434 && open-webui serve'
 
 # Open Sublime
 alias sm='open -a "Sublime Text"'

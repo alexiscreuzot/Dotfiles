@@ -1,3 +1,89 @@
+#   Functions 
+#   ------------------------------------------------------------
+
+# GitHub PR Auto-Approver using GitHub CLI
+# Requires: gh CLI tool installed and authenticated
+#!/bin/zsh
+# GitHub PR Auto-Approver using GitHub CLI (zsh compatible)
+# Add this to your ~/.zshrc
+
+approve_pr() {
+    if [ $# -eq 0 ]; then
+        echo "Usage: approve_pr <pr_url> [review_message]"
+        echo "Example: approve_pr https://github.com/sorenson-eng/forum-backend-socket/pull/132"
+        return 1
+    fi
+    
+    local pr_url="$1"
+    local review_message="${2:-Approved}"
+    
+    # Check if gh CLI is installed
+    if ! command -v gh &> /dev/null; then
+        echo "❌ Error: GitHub CLI (gh) is not installed"
+        echo "Install it with: brew install gh"
+        return 1
+    fi
+    
+    # Check if authenticated
+    if ! gh auth status &> /dev/null; then
+        echo "❌ Error: Not authenticated with GitHub CLI"
+        echo "Run: gh auth login"
+        return 1
+    fi
+    
+    # Extract components using zsh parameter expansion
+    # Remove the https://github.com/ prefix
+    local url_without_prefix="${pr_url#https://github.com/}"
+    
+    # Split on '/' - zsh uses different syntax
+    local parts=(${(s:/:)url_without_prefix})
+    
+    if [[ ${#parts} -ge 4 && "${parts[3]}" == "pull" ]]; then
+        local owner="${parts[1]}"
+        local repo="${parts[2]}"
+        local pr_number="${parts[4]}"
+    else
+        echo "❌ Error: Invalid GitHub PR URL format"
+        echo "Expected format: https://github.com/owner/repo/pull/123"
+        echo "Received: $pr_url"
+        return 1
+    fi
+    
+    echo "🔍 Approving PR: $owner/$repo#$pr_number"
+    
+    # Approve the PR using gh CLI
+    if gh pr review "$pr_number" --repo "$owner/$repo" --approve --body "$review_message"; then
+        echo "✅ Successfully approved PR #$pr_number"
+        echo "🔗 View PR: $pr_url"
+    else
+        echo "❌ Failed to approve PR #$pr_number"
+        return 1
+    fi
+}
+
+# Short alias
+alias apr='approve_pr'
+
+function iconify() {
+    ITUNES_ARTWORK="$1"
+    FOLDER="${2:-.}"
+
+    mkdir -p "$FOLDER"
+
+    sizes=(29 40 60 76)
+
+    for i in ${sizes[@]}; do
+        s1x=${i}
+        s2x=$(expr ${i} \* 2)
+        s3x=$(expr ${i} \* 3)
+        sips -z ${s1x} ${s1x} "$ITUNES_ARTWORK" --out "${FOLDER}/Icon-${i}.png"
+        sips -z ${s2x} ${s2x} "$ITUNES_ARTWORK" --out "${FOLDER}/Icon-${i}@2x.png"
+        sips -z ${s3x} ${s3x} "$ITUNES_ARTWORK" --out "${FOLDER}/Icon-${i}@3x.png"
+    done
+
+    sips -z 167 167 "$ITUNES_ARTWORK" --out "${FOLDER}/Icon-83.5@2x.png"
+}
+
 # Determine size of a file or total size of a directory
 function size() {
     if du -b /dev/null > /dev/null 2>&1; then
@@ -12,63 +98,81 @@ function size() {
     fi;
 }
 
-gpgencrypt() {
-    # Function to read multi-line input until a specific end signal (Ctrl-D)
-    read_multiline_input() {
-        echo "Enter the content (press Ctrl-D when finished):"
-        local content=""
-        while IFS= read -r line; do
-            content+="$line\n"
-        done
-        echo "$content"
-    }
-
-    # Read the message
-    echo "Let's encrypt a message with PGP!"
-    echo "Enter the message to encrypt (press Ctrl-D when finished):"
-    local message=$(read_multiline_input)
-
-    # Temporary file for the public key
-    local TEMP_KEY_FILE=$(mktemp)
-
-    # Read the recipient's public key
-    echo "Paste the recipient's public key (press Ctrl-D when finished):"
-    local key_content=$(read_multiline_input)
-    echo -e "$key_content" > "$TEMP_KEY_FILE"
-
-    # Import the public key and extract the email address
-    local import_output=$(gpg --import "$TEMP_KEY_FILE" 2>&1)
-    local recipient_email=$(echo "$import_output" | sed -n 's/.*"\(.*\)" not changed/\1/p')
-
-    # Check the extracted email address
-    echo "Extracted email address: $recipient_email"
-
-    # Encrypt the message and display the encrypted message
-    echo -e "$message" | gpg --encrypt --recipient "$recipient_email" --armor
-
-    # Clean up: Remove the temporary file
-    rm "$TEMP_KEY_FILE"
-}
-
-gpgdecrypt() {
-    # Function to read multi-line input until a specific end signal (Ctrl-D)
-    read_multiline_input() {
-        echo "Enter the encrypted message (press Ctrl-D when finished):"
-        local content=""
-        while IFS= read -r line; do
-            content+="$line\n"
-        done
-        echo "$content"
-    }
-
-    echo "Let's decrypt a message with PGP!"
-    echo "Enter the message to decrypt (press Ctrl-D when finished):"
-
-    # Read the encrypted message
-    local encrypted_message=$(read_multiline_input)
-
-    # Decrypt the message and display the output
-    echo -e "$encrypted_message" | gpg --decrypt --pinentry-mode loopback 2>&1 
+# `o` with no arguments opens the current directory, otherwise opens the given
+# location
+function o() {
+    if [ $# -eq 0 ]; then
+        open .;
+    else
+        open "$@";
+    fi;
 }
 
 
+# Function to delete a Git tag both locally and remotely
+delete_git_tag() {
+    if [ -z "$1" ]; then
+        echo "Usage: delete_git_tag <tagname>"
+        return 1
+    fi
+
+    TAG=$1
+
+    # Delete the tag locally
+    echo "Deleting local tag: $TAG"
+    git tag -d $TAG
+
+    # Delete the tag from the remote
+    echo "Deleting remote tag: $TAG"
+    git push origin :refs/tags/$TAG
+
+    echo "Tag $TAG deleted locally and from the remote."
+}
+
+# Function to delete a Git tag locally and remotely, then recreate it on the latest commit
+retag() {
+    if [ -z "$1" ]; then
+        echo "Usage: retag <tagname>"
+        return 1
+    fi
+
+    TAG=$1
+
+    echo "Deleting local tag: $TAG"
+    git tag -d "$TAG"
+
+    echo "Deleting remote tag: $TAG"
+    git push origin :refs/tags/"$TAG"
+
+    echo "Creating new tag: $TAG on latest commit"
+    git tag "$TAG"
+
+    echo "Pushing new tag to remote"
+    git push origin "$TAG"
+
+    echo "Tag $TAG was retagged to the latest commit."
+}
+ai() {
+  local mlx_pid ui_pid model
+  local -a models
+  models=(~/Developer/models/*(/N))
+
+  if [[ -n "$1" ]]; then
+    model=~/Developer/models/$1
+  else
+    echo "Models:"
+    for i in {1..$#models}; do echo "  $i) ${models[$i]:t}"; done
+    read "choice?Pick [1]: "
+    model=${models[${choice:-1}]}
+  fi
+
+  mlx_lm.server --model "$model" --max-tokens 8192 --host 127.0.0.1 --port 8000 &
+  mlx_pid=$!
+  ~/Developer/open-webui-venv/bin/open-webui serve &
+  ui_pid=$!
+
+  trap "kill $mlx_pid $ui_pid 2>/dev/null; trap - INT TERM EXIT" INT TERM EXIT
+  for i in {1..60}; do curl -sf http://127.0.0.1:8080/health >/dev/null && break; sleep 0.5; done
+  open http://localhost:8080
+  wait $mlx_pid $ui_pid
+}

@@ -1,0 +1,9 @@
+{
+	"ignored_packages":
+	[
+		"Vintage",
+	],
+	"theme": "Adaptive.sublime-theme",
+	"color_scheme": "Packages/Monokai Dark/Monokai Dark.tmTheme",
+	"index_files": true,
+}

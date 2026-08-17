@@ -1,0 +1,17 @@
+{
+    "terminal.integrated.defaultProfile.osx": "zsh",  // For macOS
+    "workbench.startupEditor": "none",
+    "git.enableSmartCommit": true,
+    "git.confirmSync": false,
+    "git.autofetch": true,
+    "markdown-preview-enhanced.previewTheme": "github-light.css",
+    "markdown-preview-enhanced.codeBlockTheme": "github.css",
+    "[html]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "github.copilot.enable": {
+        "*": false
+    },
+    "terminal.integrated.gpuAcceleration": "off",
+    "github.copilot.nextEditSuggestions.enabled": true
+}

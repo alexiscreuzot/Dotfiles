@@ -1,84 +1,70 @@
 # Dotfiles
 
-Modern, modular dotfiles setup with performance optimizations for zsh.
+macOS dotfiles managed with [chezmoi](https://www.chezmoi.io/), with age-encrypted
+secrets, a Brewfile for all packages/apps, macOS system defaults, and a one-command
+bootstrap for fresh machines.
 
-## Quick Setup
+## Fresh Mac setup
 
 ```bash
-# Backup existing .zshrc
-mv ~/.zshrc ~/.zshrc.backup
-
-# Create symlink to dotfiles
-ln -s ~/Documents/Dotfiles/_init_ ~/.zshrc
-
-# Create secrets file for API tokens
-cp ~/Documents/Dotfiles/.secrets.example ~/.secrets
-nano ~/.secrets  # Add your tokens here
+git clone git@github.com:alexiscreuzot/Dotfiles.git ~/Developer/Dotfiles
+# (or https://github.com/alexiscreuzot/Dotfiles.git if SSH keys aren't set up yet)
+~/Developer/Dotfiles/bootstrap.sh
 ```
 
-## Structure
+The bootstrap installs Xcode CLT, Homebrew, chezmoi and age, then applies
+everything: dotfiles, Brewfile packages, oh-my-zsh, and macOS defaults.
 
-- `_init_` - Main entry point (symlink to `~/.zshrc`)
-- `path` - PATH configs, oh-my-zsh, and dev tools
-- `aliases` - Command shortcuts
-- `functions` - Custom shell functions
-- `~/.secrets` - Private file for API tokens (not in repo)
+The one manual step: when prompted, restore the **age private key** to
+`~/.config/chezmoi/key.txt` (keep a copy in your password manager). Without it,
+encrypted secrets can't be decrypted.
 
-## Performance
+## Daily usage
 
-**Lazy loading** reduces startup from 2-3s → 300-500ms:
-- **NVM** - Loads only when using `node`, `npm`, `npx`, or `nvm`
-- **rbenv** - Loads only when using `rbenv`
-- **pyenv** - Loads only when using `pyenv`
+The repo at `~/Developer/Dotfiles` *is* the chezmoi source directory.
 
-### Measure your speed
 ```bash
-time zsh -i -c exit  # Should be under 500ms
+chezmoi apply          # push repo state → home directory
+chezmoi re-add         # pull changes made to live files back into the repo
+chezmoi diff           # preview what apply would change
+chezmoi status         # files out of sync
+chezmoi add ~/.foo     # start managing a new file
 ```
 
-### Go even faster (optional)
+Then commit and push as usual — plain git workflow.
 
-**Starship theme** (faster than Spaceship):
+Changing `Brewfile` or the macOS defaults script re-runs them automatically
+on the next `chezmoi apply` (hash-guarded `run_onchange` scripts).
+
+## Secrets
+
+Secrets (e.g. `NPM_TOKEN`) live in `encrypted_private_dot_secrets.age` and are
+decrypted to `~/.secrets` (mode 600), sourced by the `path` fragment.
+
 ```bash
-brew install starship
-# In path file, replace ZSH_THEME line with:
-eval "$(starship init zsh)"
+chezmoi edit ~/.secrets        # decrypts to a temp file, re-encrypts on save
 ```
 
-**zinit** (faster than oh-my-zsh):
-```bash
-bash -c "$(curl --fail --show-error --silent --location https://raw.githubusercontent.com/zdharma-continuum/zinit/HEAD/scripts/install.sh)"
-```
+Never commit plaintext secrets — `.gitignore` covers `.secrets` and `key.txt`.
 
-**Profile to find bottlenecks**:
-```bash
-# Add to top of _init_: zmodload zsh/zprof
-# Add to bottom of path: zprof
-```
+## Layout
 
-## Benchmark
+| Path | Purpose |
+|------|---------|
+| `path`, `aliases`, `functions` | Shell fragments sourced by `.zshrc` |
+| `dot_zshrc`, `dot_tmux.conf`, `dot_tool-versions` | Managed home dotfiles |
+| `dot_config/`, `Library/` | App configs (zed, gh, VS Code, Cursor, Sublime) |
+| `encrypted_private_dot_secrets.age` | age-encrypted secrets → `~/.secrets` |
+| `Brewfile` | All brew formulae, casks, VS Code extensions |
+| `run_onchange_before_10-brew-bundle.sh.tmpl` | `brew bundle` when Brewfile changes |
+| `run_once_after_20-oh-my-zsh.sh` | Installs oh-my-zsh if missing |
+| `run_onchange_after_30-macos-defaults.sh.tmpl` | macOS system preferences |
+| `bootstrap.sh` | Fresh-Mac installer |
 
-| Configuration | Startup Time |
-|---------------|--------------|
-| oh-my-zsh + eager loading | 2000-3000ms |
-| **Current setup (lazy loading)** | **300-500ms** |
-| + Starship theme | 200-400ms |
-| + zinit | 100-200ms |
+## Notes
 
-## Security
-
-Never commit tokens to git. Store in `~/.secrets`:
-```bash
-export HOMEBREW_GITHUB_API_TOKEN="your_token_here"
-export OPENAI_API_KEY="your_key_here"
-```
-
-## Useful Aliases
-
-Already configured:
-- `c` - clear
-- `gs`, `ga`, `gc`, `gp` - git shortcuts
-- `cleanup` - remove all .DS_Store files
-- `show`/`hide` - toggle hidden files in Finder
-- `ports` - list listening ports
-- `myip` - get public IP
+- `cursor` and `sublime-text` casks may warn on this machine because the apps
+  were installed manually. To adopt them into brew: `brew install --cask --force cursor`
+  (do this when Cursor isn't running). Sublime Text 3 config is preserved as-is.
+- Git and SSH configs are intentionally not managed yet; add with
+  `chezmoi add ~/.gitconfig` if wanted.

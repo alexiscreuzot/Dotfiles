@@ -1,5 +1,6 @@
-# Never commit actual secrets
+# Never commit actual secrets or encryption keys
 .secrets
+key.txt
 
 # macOS
 .DS_Store
@@ -36,4 +37,3 @@ Temporary Items
 *.backup
 *.bak
 *.old
-

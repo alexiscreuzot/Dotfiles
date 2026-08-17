@@ -1,86 +1,50 @@
 #   Path 
 #   ------------------------------------------------------------
-
-# Fixes Insecure completion-dependent directories detected
-ZSH_DISABLE_COMPFIX=true
-
-# Path to your oh-my-zsh installation.
-export ZSH="/Users/alex/.oh-my-zsh"
-ZSH_THEME="spaceship"
-plugins=(git)
-source $ZSH/oh-my-zsh.sh
-
-# export BASH_SILENCE_DEPRECATION_WARNING=1
-
-# lang variables
-export LC_ALL="en_US.UTF-8"
-export LANG="en_US.UTF-8"
-export LANGUAGE="en_US.UTF-8"
-
-# Load secrets from ~/.secrets if it exists (API tokens, keys, etc.)
-[ -f ~/.secrets ] && source ~/.secrets
-
-# SSH - Uncomment to auto-load SSH keys on shell startup
-# ssh-add --apple-load-keychain --apple-use-keychain ~/.ssh/id_rsa 2>/dev/null
-
-
-# NVM - Lazy Loading (speeds up shell startup significantly)
-export NVM_DIR="$HOME/.nvm"
-# Lazy load NVM - only load when node/npm/nvm commands are used
-nvm() {
-    unset -f nvm node npm npx
-    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-    [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
-    nvm "$@"
-}
-node() {
-    unset -f nvm node npm npx
-    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-    [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
-    node "$@"
-}
-npm() {
-    unset -f nvm node npm npx
-    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-    [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
-    npm "$@"
-}
-npx() {
-    unset -f nvm node npm npx
-    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-    [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
-    npx "$@"
-}
-
-# RBENV - Lazy Loading
-export PATH=$HOME/.rbenv/bin:/usr/local/bin:$HOME/.bin:$PATH
-rbenv() {
-    unset -f rbenv
-    eval "$(command rbenv init - zsh)"
-    rbenv "$@"
-}
-
-# Homebrew (should be after rbenv so that path takes priority over Intel)
-# SECURITY: Store tokens in ~/.secrets or environment variables, not in dotfiles!
-# Uncomment and add to a private file: export HOMEBREW_GITHUB_API_TOKEN=your_token_here
+# System paths (make sure these are first to avoid overriding system binaries)
+export PATH="/usr/bin:/bin:/usr/sbin:/sbin"
+# Add rbenv and pyenv paths
 export PATH="/opt/homebrew/bin:$PATH"
+export PATH="$HOME/.rbenv/bin:$HOME/.pyenv/bin:$PATH"
+export MLX_LOCAL_API_KEY=local
+# Add other custom paths
+export PATH="/usr/local/bin:/usr/local/sbin:/usr/local/git/bin:/usr/local/share/npm/bin:/opt/local/bin:/opt/local/sbin:$PATH"
 
-# PYENV - Lazy Loading
-export PYENV_ROOT="$HOME/.pyenv"
-export PATH="$PYENV_ROOT/bin:$PATH"
-pyenv() {
-    unset -f pyenv
-    eval "$(command pyenv init -)"
-    pyenv "$@"
-}
+# Load secrets — keep this file out of git
+[ -f "$HOME/.secrets" ] && source "$HOME/.secrets"
 
-# Android
-export ANDROID_SDK=$HOME/Library/Android/sdk
-export PATH=$HOME/Library/Android/sdk/platform-tools:$PATH
+# Initialize rbenv
+if command -v rbenv 1>/dev/null 2>&1; then
+  eval "$(rbenv init -)"
+fi
+# Initialize pyenv
+if command -v pyenv 1>/dev/null 2>&1; then
+  eval "$(pyenv init --path)"
+  eval "$(pyenv init -)"
+  # Function to update PATH for active Python version
+  update_python_path() {
+    local py_version
+    py_version=$(pyenv version-name)
+    export PATH="$HOME/.pyenv/versions/$py_version/bin:$PATH"
+  }
+  # Ensure the function is called on startup
+  update_python_path
+  # Add hook to pyenv commands
+  export PYENV_HOOK_PATH="$HOME/.pyenv/hooks"
+  mkdir -p "$PYENV_HOOK_PATH"
+  echo 'update_python_path' > "$PYENV_HOOK_PATH/after-switch"
+fi
+# Homebrew configuration
+if [ -f /opt/homebrew/bin/brew ]; then
+  eval "$(/opt/homebrew/bin/brew shellenv)"
+fi
 
-# Flutter
-export PATH="$HOME/flutter/bin:$PATH"
+# Android SDK — must come after brew shellenv, which re-prepends /opt/homebrew/bin
+export ANDROID_HOME="$HOME/Library/Android/sdk"
+export ANDROID_SDK_ROOT="$ANDROID_HOME"
+export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH"
 
-# GCloud
-if [ -f "$HOME/google-cloud-sdk/path.zsh.inc" ]; then . "$HOME/google-cloud-sdk/path.zsh.inc"; fi
-if [ -f "$HOME/google-cloud-sdk/completion.zsh.inc" ]; then . "$HOME/google-cloud-sdk/completion.zsh.inc"; fi
+# Start SSH agent if not running
+if [ -z "$SSH_AUTH_SOCK" ]; then
+  eval "$(ssh-agent -s)" > /dev/null
+  ssh-add --apple-use-keychain ~/.ssh/id_ed25519 > /dev/null
+fi

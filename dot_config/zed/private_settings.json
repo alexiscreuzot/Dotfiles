@@ -1,0 +1,64 @@
+// Zed settings
+//
+// For information on how to configure Zed, see the Zed
+// documentation: https://zed.dev/docs/configuring-zed
+//
+// To see all of Zed's default settings without changing your
+// custom settings, run `zed: open default settings` from the
+// command palette (cmd-shift-p / ctrl-shift-p)
+{
+  "icon_theme": "Zed (Default)",
+  "ui_font_size": 16,
+  "buffer_font_size": 15,
+  "theme": {
+    "mode": "dark",
+    "light": "One Light",
+    "dark": "Ayu Dark"
+  },
+  "language_models": {
+    "openai_compatible": {
+      "mlx-local": {
+        "api_url": "http://127.0.0.1:8000/v1",
+        "available_models": [
+          {
+            "name": "/Users/acreuzot/models/qwen3-coder-30b-3bit",
+            "display_name": "Qwen3 Coder 30B (local)",
+            "max_tokens": 32768,
+            "max_output_tokens": 8192,
+            "capabilities": {
+              "tools": true,
+              "images": false,
+              "parallel_tool_calls": false,
+              "prompt_cache_key": false,
+              "chat_completions": true
+            }
+          },
+          {
+            "name": "LiquidAI/LFM2.5-2.6B-MLX",
+            "display_name": "LFM2.5 2.6B (local)",
+            "max_tokens": 32768,
+            "max_output_tokens": 8192,
+            "capabilities": {
+              "tools": true,
+              "images": false,
+              "parallel_tool_calls": false,
+              "prompt_cache_key": false,
+              "chat_completions": true
+            }
+          }
+        ]
+      }
+    }
+  },
+  "agent": {
+    "sandbox_permissions": {
+      "write_paths": [
+        {
+          "requested": "/Users/acreuzot/Developer/_sandbox/ai_merits_showcase",
+          "resolved": "/Users/acreuzot/Developer/_sandbox/ai_merits_showcase"
+        }
+      ]
+    },
+    "default_model": { "provider": "mlx-local", "model": "/Users/acreuzot/models/qwen3-coder-30b-3bit" }
+  }
+}
