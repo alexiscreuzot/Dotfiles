@@ -20,11 +20,15 @@ fi
 echo "==> chezmoi, age, git"
 brew install chezmoi age git
 
+echo "==> Bitwarden (needed to retrieve the age key)"
+brew install --cask bitwarden
+
 echo "==> age private key"
 if [ ! -f "$HOME/.config/chezmoi/key.txt" ]; then
     mkdir -p "$HOME/.config/chezmoi"
-    echo "Restore your age private key to: ~/.config/chezmoi/key.txt"
-    echo "(keep it in your password manager; without it, encrypted secrets cannot be applied)"
+    echo "Open Bitwarden, sign in, and copy your age secret key (AGE-SECRET-KEY-...)"
+    echo "into: ~/.config/chezmoi/key.txt"
+    echo "(without it, encrypted secrets cannot be applied)"
     read -r -p "Press Enter once the key is in place..."
     chmod 600 "$HOME/.config/chezmoi/key.txt"
 fi

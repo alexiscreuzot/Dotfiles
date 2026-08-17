@@ -13,8 +13,9 @@ git clone https://github.com/alexiscreuzot/Dotfiles.git ~/Developer/Dotfiles
 
 - Running `git` on a fresh Mac triggers the Xcode CLT install prompt — accept it,
   wait for it to finish, then run the clone again.
-- When prompted, restore your **age secret key** (from your password manager) to
-  `~/.config/chezmoi/key.txt` — it's the only manual step.
+- Bootstrap installs **Bitwarden** early, then asks you to restore your
+  **age secret key** from Bitwarden into `~/.config/chezmoi/key.txt` — the only
+  manual step.
 
 Bootstrap then installs Homebrew, chezmoi, every Brewfile package/app, oh-my-zsh,
 applies macOS defaults and all config files. Restart the terminal when done.
