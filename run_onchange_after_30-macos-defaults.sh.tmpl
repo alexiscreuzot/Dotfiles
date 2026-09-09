@@ -59,13 +59,14 @@ if command -v dockutil >/dev/null 2>&1; then
     _dock_add "/Applications/GitHub Desktop.app"
     _dock_add "/System/Applications/Utilities/Terminal.app"
     _dock_add "/System/Applications/System Settings.app"
-    # dockutil adds folders as aliases (the shortcut arrow). Write real
-    # directory-tiles instead, matching a Dock folder dragged in by hand.
-    python3 - "$HOME/Downloads" <<'PY'
+    # Add through dockutil so cfprefsd sees them, then turn the alias
+    # tiles into real directory-tiles (no shortcut arrow).
+    dockutil --add /Applications --view list --display folder --sort name --no-restart >/dev/null
+    dockutil --add "$HOME/Downloads" --view list --display folder --sort dateadded --no-restart >/dev/null
+    _dock_plist="$(mktemp)"
+    defaults export com.apple.dock "$_dock_plist"
+    python3 - "$_dock_plist" <<'PY'
 import pathlib, plistlib, sys
-
-downloads = pathlib.Path(sys.argv[1]).expanduser().resolve()
-plist_path = pathlib.Path.home() / "Library/Preferences/com.apple.dock.plist"
 
 def folder_tile(path, arrangement):
     url = path.resolve().as_uri()
@@ -84,19 +85,22 @@ def folder_tile(path, arrangement):
         "tile-type": "directory-tile",
     }
 
+plist_path = pathlib.Path(sys.argv[1])
 with plist_path.open("rb") as f:
     dock = plistlib.load(f)
 dock["persistent-others"] = [
     folder_tile(pathlib.Path("/Applications"), 1),
-    folder_tile(downloads, 2),
+    folder_tile(pathlib.Path.home() / "Downloads", 2),
 ]
 with plist_path.open("wb") as f:
-    plistlib.dump(dock, f, fmt=plistlib.FMT_BINARY)
+    plistlib.dump(dock, f)
 PY
+    defaults import com.apple.dock "$_dock_plist"
+    rm -f "$_dock_plist"
 fi
 
 # --- Network volumes: no .DS_Store litter ---
 defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool true
 defaults write com.apple.desktopservices DSDontWriteUSBStores -bool true
 
-killall Finder Dock SystemUIServer 2>/dev/null || true
+killall cfprefsd Finder Dock SystemUIServer 2>/dev/null || true
