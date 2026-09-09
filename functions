@@ -281,3 +281,68 @@ with open(out, "wb") as f:
 print(f"Merged {len(inputs)} PDFs into {out}")
 EOF
 }
+
+#   Xcode
+#   ------------------------------------------------------------
+
+# Open the Xcode project in the current directory — workspace wins over project
+xc() {
+  local -a targets
+  targets=(*.xcworkspace(N) *.xcodeproj(N) Package.swift(N))
+  if (( ${#targets} == 0 )); then
+    echo "No Xcode workspace, project or package in $PWD."
+    return 1
+  fi
+  open "${targets[1]}"
+}
+
+# Wipe DerivedData
+xcclean() {
+  local dd="$HOME/Library/Developer/Xcode/DerivedData"
+  if [ ! -d "$dd" ] || [ -z "$(ls -A "$dd")" ]; then
+    echo "DerivedData is already empty."
+    return 0
+  fi
+  local size="$(du -sh "$dd" 2>/dev/null | cut -f1)"
+  _ask_choice "Delete DerivedData ($size)?" "Delete" "Cancel" || return 1
+  rm -rf "$dd"/*
+  echo "Freed $size."
+}
+
+# Pick an iOS simulator and boot it
+sim() {
+  if ! command -v xcrun > /dev/null; then
+    echo "xcrun not found — install the Xcode command line tools."
+    return 1
+  fi
+
+  local json
+  json="$(xcrun simctl list devices available -j)" || return 1
+
+  # One row per device so the udid and its label can't drift apart
+  local -a rows
+  rows=("${(@f)$(print -r -- "$json" | jq -r '
+    .devices
+    | with_entries(select(.key | test("iOS")))
+    | to_entries[]
+    | (.key | split(".") | last | sub("^iOS-"; "iOS ") | gsub("-"; ".")) as $os
+    | .value[]
+    | "\(.udid)\t\(.name)  ·  \($os)"')}")
+  rows=("${(@)rows:#}")   # splitting empty output leaves one empty element
+
+  if (( ${#rows} == 0 )); then
+    echo "No iOS simulators available. Install a runtime from Xcode > Settings > Components."
+    return 1
+  fi
+
+  local -a udids names
+  local row
+  for row in "${rows[@]}"; do
+    udids+=("${row%%$'\t'*}")
+    names+=("${row#*$'\t'}")
+  done
+
+  _ask_menu "Simulators" "${names[@]}" || return 1
+  xcrun simctl boot "${udids[$REPLY]}" 2> /dev/null
+  open -a Simulator
+}

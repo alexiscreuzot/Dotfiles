@@ -31,6 +31,8 @@ private_dot_ssh/config                 ~/.ssh/config
 encrypted_private_dot_secrets.age      ~/.secrets
 dot_config/gh/                         ~/.config/gh/
 dot_config/zed/                        ~/.config/zed/
+dot_cursor/rules · skills · commands   ~/.cursor/  (agent rules and skills)
+dot_cursor/encrypted_..._mcp.json.age  ~/.cursor/mcp.json  (encrypted)
 private_Library/.../Cursor/            Cursor settings
 private_Library/.../Code/              VS Code settings
 private_Library/.../Sublime Text/      Sublime settings
@@ -73,8 +75,24 @@ This directory **is** the chezmoi source. `dot_zshrc` becomes `~/.zshrc`, `dot_c
 | Preview | `chezmoi diff` |
 | Apply | `chezmoi apply` |
 | Start managing something new | `chezmoi add ~/.foo` |
+| Check the machine | `doctor` |
 
 Then commit and push — ordinary git. Brewfile and macOS-defaults changes re-run on the next `apply`.
+
+`doctor` walks the toolchain, GitHub SSH, the age key, chezmoi drift, the login shell, the Brewfile and `~/.tool-versions`, then reports what is off. It never changes anything.
+
+---
+
+## Shell
+
+`fzf` is bound to Ctrl-T (files), Ctrl-R (history) and Alt-C (directories), backed by `fd` with `bat` and `eza` previews. `zoxide` provides `z`, and autosuggestions plus syntax highlighting load last in `~/.zshrc`. `ls`, `ll`, `la` and `lt` go through `eza`.
+
+| Command | Does |
+| --- | --- |
+| `xc` | Open the workspace, project or package in the current directory |
+| `xcclean` | Delete DerivedData, after confirming how much it frees |
+| `sim` | Pick an iOS simulator with the arrow keys and boot it |
+| `ai` | MLX model server plus Open WebUI, with a model picker |
 
 ---
 

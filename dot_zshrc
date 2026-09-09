@@ -16,3 +16,29 @@ unset file;
 # End of LM Studio CLI section
 
 export PATH="$HOME/.local/bin:$PATH"
+
+# Shell enhancements — each one is skipped when the brew formula isn't installed
+_omz_autosuggest="${HOMEBREW_PREFIX:-/opt/homebrew}/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
+[ -f "$_omz_autosuggest" ] && source "$_omz_autosuggest"
+unset _omz_autosuggest
+
+if command -v fzf >/dev/null 2>&1; then
+    source <(fzf --zsh)
+    export FZF_DEFAULT_OPTS="--height 40% --layout reverse --border rounded"
+    if command -v fd >/dev/null 2>&1; then
+        export FZF_DEFAULT_COMMAND="fd --type f --hidden --follow --exclude .git"
+        export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+        export FZF_ALT_C_COMMAND="fd --type d --hidden --follow --exclude .git"
+    fi
+    command -v bat >/dev/null 2>&1 && \
+        export FZF_CTRL_T_OPTS="--preview 'bat --color=always --style=numbers --line-range=:200 {}'"
+    command -v eza >/dev/null 2>&1 && \
+        export FZF_ALT_C_OPTS="--preview 'eza --tree --level=2 --color=always {}'"
+fi
+
+command -v zoxide >/dev/null 2>&1 && eval "$(zoxide init zsh)"
+
+# Must stay last: it wraps every widget defined above it
+_omz_highlight="${HOMEBREW_PREFIX:-/opt/homebrew}/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+[ -f "$_omz_highlight" ] && source "$_omz_highlight"
+unset _omz_highlight

@@ -1,9 +1,13 @@
 README.md
 bootstrap.sh
 install.sh
+doctor.sh
 ui.sh
 Brewfile
 aliases
 functions
 path
 .gitignore
+
+.DS_Store
+**/.DS_Store

@@ -1,0 +1,12 @@
+---
+description: Never run builds or tests — Alexis does that himself.
+alwaysApply: true
+---
+
+# Don't build or test
+
+Never run builds or tests. Alexis does that part.
+
+Do not invoke `xcodebuild`, `swift test`, `swift build`, Xcode, simulators, or any other compile/test command unless he explicitly asks you to run one.
+
+Writing or editing test code is fine when the task calls for it. Running those tests is not.

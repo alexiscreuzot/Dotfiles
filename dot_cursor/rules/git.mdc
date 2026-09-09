@@ -1,0 +1,5 @@
+When generating commits:
+
+- use imperative style
+- be brief and concise
+- never mention AI, Cursor, Copilot, or any AI tool in commit messages, trailers, or metadata

@@ -31,6 +31,12 @@ ui_step() {
         "$C_BOLD" "$1" "$C_RESET"
 }
 
+# Unnumbered heading, for scripts that check rather than progress
+ui_section() {
+    printf '\n'
+    printf '  %s───%s  %s%s%s\n' "$C_DIM" "$C_RESET" "$C_BOLD" "$1" "$C_RESET"
+}
+
 ui_ok()   { printf '       %s✓%s  %s\n' "$C_GREEN"  "$C_RESET" "$1"; }
 ui_info() { printf '       %s·%s  %s\n' "$C_DIM"    "$C_RESET" "$1"; }
 ui_warn() { printf '       %s!%s  %s\n' "$C_YELLOW" "$C_RESET" "$1"; }

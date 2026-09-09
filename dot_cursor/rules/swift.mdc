@@ -1,0 +1,22 @@
+---
+alwaysApply: false
+---
+
+Prefer using SourceKit-LSP information for Swift navigation.
+Use symbol definitions instead of text search.
+Before refactoring functions, check references across modules.
+
+Swift coding guidelines:
+
+Prefer:
+- value types (struct)
+- immutability
+- async/await
+- Result types for error handling
+
+Avoid:
+- force unwraps
+- force casts
+- large UIViewControllers
+
+Prefer dependency injection for services.

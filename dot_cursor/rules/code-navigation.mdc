@@ -1,0 +1,15 @@
+---
+alwaysApply: false
+---
+
+Always prefer semantic navigation over text search.
+
+Use symbol-based tools when available:
+- go to definition
+- find references
+- symbol search
+
+Use text search only when:
+- searching comments
+- searching strings
+- searching config files
