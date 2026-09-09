@@ -9,7 +9,7 @@
 <br/>
 
 ```bash
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/alexiscreuzot/Dotfiles/master/install.sh?$(date +%s))"
+sh -c "$(curl -fsSL "https://raw.githubusercontent.com/alexiscreuzot/Dotfiles/master/install.sh?$(date +%s)")"
 ```
 
 </div>

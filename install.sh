@@ -1,6 +1,7 @@
 #!/bin/bash
-# Fresh-Mac entry point (?$(date +%s) busts GitHub's raw CDN cache):
-#   sh -c "$(curl -fsSL https://raw.githubusercontent.com/alexiscreuzot/Dotfiles/master/install.sh?$(date +%s))"
+# Fresh-Mac entry point (quoted ?$(date +%s) busts GitHub's raw CDN cache;
+# zsh treats an unquoted ? as a glob and errors with "no matches found"):
+#   sh -c "$(curl -fsSL "https://raw.githubusercontent.com/alexiscreuzot/Dotfiles/master/install.sh?$(date +%s)")"
 set -e
 
 DOTFILES_DIR="$HOME/Developer/Dotfiles"
