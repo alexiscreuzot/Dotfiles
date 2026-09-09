@@ -8,6 +8,11 @@ defaults write NSGlobalDomain AppleShowAllExtensions -bool true
 defaults write com.apple.finder ShowPathbar -bool true
 defaults write com.apple.finder ShowStatusBar -bool true
 defaults write com.apple.finder FXEnableExtensionChangeWarning -bool false
+defaults write com.apple.finder _FXSortFoldersFirst -bool true
+defaults write com.apple.finder _FXSortFoldersFirstOnDesktop -bool true
+defaults write com.apple.finder FXDefaultSearchScope -string "SCcf"
+defaults write com.apple.finder NewWindowTarget -string "PfHm"
+defaults write com.apple.finder NewWindowTargetPath -string "file://${HOME}/"
 
 # --- Keyboard ---
 # 1 / 10 is a step faster than the System Settings sliders (2 / 15).
@@ -15,11 +20,21 @@ defaults write NSGlobalDomain KeyRepeat -int 1
 defaults write NSGlobalDomain InitialKeyRepeat -int 10
 # Hold a letter for accents (é è à ç). Arrows and delete still repeat.
 defaults write NSGlobalDomain ApplePressAndHoldEnabled -bool true
+defaults write NSGlobalDomain NSAutomaticQuoteSubstitutionEnabled -bool false
+defaults write NSGlobalDomain NSAutomaticDashSubstitutionEnabled -bool false
+defaults write NSGlobalDomain NSAutomaticPeriodSubstitutionEnabled -bool false
+
+# --- Trackpad ---
+defaults write com.apple.AppleMultitouchTrackpad Clicking -bool true
+defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad Clicking -bool true
+defaults write NSGlobalDomain com.apple.mouse.tapBehavior -int 1
+defaults -currentHost write NSGlobalDomain com.apple.mouse.tapBehavior -int 1
 
 # --- Screenshots ---
 mkdir -p "$HOME/Screenshots"
 defaults write com.apple.screencapture location -string "$HOME/Screenshots"
 defaults write com.apple.screencapture type -string "png"
+defaults write com.apple.screencapture disable-shadow -bool true
 
 # --- Dock ---
 defaults write com.apple.dock autohide -bool true
@@ -101,35 +116,122 @@ PY
     rm -f "$_dock_plist"
 fi
 
-# --- Default browser: Arc ---
-if [ -d "/Applications/Arc.app" ]; then
-    python3 - <<'PY'
+# --- Default apps: Arc, IINA, Spark, Keka, Sublime Text ---
+python3 - <<'PY'
 import ctypes
 import ctypes.util
+import plistlib
+from pathlib import Path
 
-cf = ctypes.cdll.LoadLibrary(ctypes.util.find_library("CoreFoundation"))
-cs = ctypes.cdll.LoadLibrary(
-    "/System/Library/Frameworks/CoreServices.framework/CoreServices"
+def load(name, fallback):
+    return ctypes.cdll.LoadLibrary(ctypes.util.find_library(name) or fallback)
+
+cf = load("CoreFoundation", "/System/Library/Frameworks/CoreFoundation.framework/CoreFoundation")
+cs = load("CoreServices", "/System/Library/Frameworks/CoreServices.framework/CoreServices")
+uti_lib = load(
+    "UniformTypeIdentifiers",
+    "/System/Library/Frameworks/UniformTypeIdentifiers.framework/UniformTypeIdentifiers",
 )
 
 kCFStringEncodingUTF8 = 0x08000100
+kLSRolesAll = 0xFFFFFFFF
+
 cf.CFStringCreateWithCString.restype = ctypes.c_void_p
-cf.CFStringCreateWithCString.argtypes = [
-    ctypes.c_void_p,
-    ctypes.c_char_p,
-    ctypes.c_uint32,
-]
+cf.CFStringCreateWithCString.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_uint32]
 cs.LSSetDefaultHandlerForURLScheme.restype = ctypes.c_int32
 cs.LSSetDefaultHandlerForURLScheme.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
+cs.LSSetDefaultRoleHandlerForContentType.restype = ctypes.c_int32
+cs.LSSetDefaultRoleHandlerForContentType.argtypes = [
+    ctypes.c_void_p,
+    ctypes.c_uint32,
+    ctypes.c_void_p,
+]
+uti_lib.UTTypeCreatePreferredIdentifierForTag.restype = ctypes.c_void_p
+uti_lib.UTTypeCreatePreferredIdentifierForTag.argtypes = [
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+]
 
 def cfstr(text):
     return cf.CFStringCreateWithCString(None, text.encode(), kCFStringEncodingUTF8)
 
-bundle = cfstr("company.thebrowser.Browser")
-for scheme in ("http", "https"):
-    cs.LSSetDefaultHandlerForURLScheme(cfstr(scheme), bundle)
+def set_scheme(bundle_id, scheme):
+    cs.LSSetDefaultHandlerForURLScheme(cfstr(scheme), cfstr(bundle_id))
+
+def set_uti(bundle_id, uti):
+    cs.LSSetDefaultRoleHandlerForContentType(cfstr(uti), kLSRolesAll, cfstr(bundle_id))
+
+def set_ext(bundle_id, ext):
+    ident = uti_lib.UTTypeCreatePreferredIdentifierForTag(
+        cfstr("public.filename-extension"), cfstr(ext), None
+    )
+    if ident:
+        cs.LSSetDefaultRoleHandlerForContentType(ident, kLSRolesAll, cfstr(bundle_id))
+
+if Path("/Applications/Arc.app").is_dir():
+    for scheme in ("http", "https"):
+        set_scheme("company.thebrowser.Browser", scheme)
+
+iina = Path("/Applications/IINA.app")
+if iina.is_dir():
+    bundle = "com.colliderli.iina"
+    for uti in ("public.movie", "public.audio"):
+        set_uti(bundle, uti)
+    skip = {"*", "gif", "iinaplgz", "iinaplugin"}
+    info = plistlib.loads((iina / "Contents/Info.plist").read_bytes())
+    exts = {
+        ext.lower()
+        for doc in info.get("CFBundleDocumentTypes") or []
+        for ext in doc.get("CFBundleTypeExtensions") or []
+        if ext.lower() not in skip
+    }
+    for ext in sorted(exts):
+        set_ext(bundle, ext)
+
+if Path("/Applications/Spark Desktop.app").is_dir():
+    set_scheme("com.readdle.SparkDesktop", "mailto")
+
+if Path("/Applications/Keka.app").is_dir():
+    bundle = "com.aone.keka"
+    for uti in (
+        "public.zip-archive",
+        "public.tar-archive",
+        "org.gnu.gnu-zip-archive",
+        "public.gzip",
+        "public.bzip2-archive",
+        "org.7-zip.7-zip-archive",
+        "com.rarlab.rar-archive",
+    ):
+        set_uti(bundle, uti)
+    for ext in (
+        "zip", "zipx", "rar", "7z", "tar", "gz", "gzip", "tgz",
+        "tbz", "tbz2", "bz2", "xz", "txz", "lzma", "lz", "lz4",
+        "zst", "tzst", "cab", "lha", "lzh", "cpio", "cpgz",
+    ):
+        set_ext(bundle, ext)
+
+if Path("/Applications/Sublime Text.app").is_dir():
+    bundle = "com.sublimetext.4"
+    for uti in (
+        "public.plain-text",
+        "public.utf8-plain-text",
+        "net.daringfireball.markdown",
+        "public.markdown",
+        "public.json",
+        "public.yaml",
+        "org.yaml.yaml",
+        "com.apple.property-list",
+        "public.xml",
+        "public.comma-separated-values-text",
+    ):
+        set_uti(bundle, uti)
+    for ext in (
+        "txt", "md", "markdown", "json", "yaml", "yml", "plist",
+        "csv", "log", "toml", "ini", "conf", "cfg", "xml", "strings",
+    ):
+        set_ext(bundle, ext)
 PY
-fi
 
 # --- Raycast takes Cmd+Space from Spotlight ---
 # 64 = Show Spotlight search, 65 = Show Finder search window.
@@ -148,5 +250,9 @@ fi
 # --- Network volumes: no .DS_Store litter ---
 defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool true
 defaults write com.apple.desktopservices DSDontWriteUSBStores -bool true
+
+# Quick Look generators (Syntax Highlight, QLMarkdown) pick up after a reset.
+qlmanage -r >/dev/null 2>&1 || true
+qlmanage -r cache >/dev/null 2>&1 || true
 
 killall cfprefsd Finder Dock SystemUIServer 2>/dev/null || true

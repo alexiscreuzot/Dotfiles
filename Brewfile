@@ -66,6 +66,10 @@ cask "keka"
 cask "proxy-audio-device"
 cask "basictex"
 cask "prince"
+cask "syntax-highlight"
+cask "qlmarkdown"
+cask "suspicious-package"
+cask "apparency"
 
 # Casks — apps
 cask "bitwarden"
