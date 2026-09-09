@@ -1,27 +1,16 @@
 #!/bin/bash
-# Fresh Mac setup: Xcode CLT → Homebrew → chezmoi+age → apply everything.
-# Usage: git clone <repo> ~/Developer/Dotfiles && ~/Developer/Dotfiles/bootstrap.sh
+# Post-clone apply. Run install.sh on a fresh Mac; this script is invoked from there.
 set -e
 
 DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-echo "==> Xcode Command Line Tools"
-if ! xcode-select -p >/dev/null 2>&1; then
-    xcode-select --install
-    read -r -p "Press Enter once the Xcode CLT installation has finished..."
-fi
-
-echo "==> Homebrew"
-if ! command -v brew >/dev/null 2>&1; then
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-    eval "$(/opt/homebrew/bin/brew shellenv)"
-fi
-
-echo "==> chezmoi, age, git"
-brew install chezmoi age git
-
-echo "==> Bitwarden (needed to retrieve the age key)"
-brew install --cask bitwarden
+for cmd in brew chezmoi age git; do
+    if ! command -v "$cmd" >/dev/null 2>&1; then
+        echo "Missing $cmd. Run install.sh first:"
+        echo "  sh -c \"\$(curl -fsSL https://raw.githubusercontent.com/alexiscreuzot/Dotfiles/master/install.sh)\""
+        exit 1
+    fi
+done
 
 echo "==> age private key"
 if [ ! -f "$HOME/.config/chezmoi/key.txt" ]; then
@@ -31,17 +20,6 @@ if [ ! -f "$HOME/.config/chezmoi/key.txt" ]; then
     echo "(without it, encrypted secrets cannot be applied)"
     read -r -p "Press Enter once the key is in place..."
     chmod 600 "$HOME/.config/chezmoi/key.txt"
-fi
-
-echo "==> SSH key"
-if [ ! -f "$HOME/.ssh/id_ed25519" ]; then
-    ssh-keygen -t ed25519 -f "$HOME/.ssh/id_ed25519"
-    echo ""
-    echo "Add this public key to GitHub (https://github.com/settings/ssh/new):"
-    echo ""
-    cat "$HOME/.ssh/id_ed25519.pub"
-    echo ""
-    read -r -p "Press Enter once added..."
 fi
 
 echo "==> Applying dotfiles (this also installs all Brewfile packages)"

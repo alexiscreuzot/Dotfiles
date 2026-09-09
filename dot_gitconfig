@@ -7,4 +7,6 @@
 	name = Alexis Creuzot
 	email = alexis.creuzot@gmail.com
 [core]
-	editor = code --wait
+    editor = code --wait
+[url "git@github.com:"]
+	insteadOf = https://github.com/
