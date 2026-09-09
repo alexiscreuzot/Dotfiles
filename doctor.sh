@@ -118,7 +118,7 @@ if command -v chezmoi >/dev/null 2>&1; then
     if [ -z "$_status" ]; then
         ok "chezmoi  everything applied"
     else
-        warn "chezmoi is out of sync" "chezmoi diff  ·  chezmoi apply"
+        warn "chezmoi is out of sync" "chezmoi diff --source $DOTFILES_DIR  ·  chezmoi apply --source $DOTFILES_DIR"
         printf '%s\n' "$_status" | head -10 | while read -r _line; do
             [ -n "$_line" ] && ui_note "$_line"
         done
@@ -136,6 +136,102 @@ if [ "${_ahead:-0}" -gt 0 ]; then
     warn "$_ahead commit(s) not pushed" "git -C $DOTFILES_DIR push"
 fi
 
+# ------------------------------------------------------------------ Cursor ---
+
+ui_section "Cursor"
+
+if [ -d "/Applications/Cursor.app" ]; then
+    ok "Cursor.app"
+else
+    bad "Cursor.app is missing" "brew install --cask cursor"
+fi
+
+_cursor_settings="$HOME/Library/Application Support/Cursor/User/settings.json"
+if [ -f "$_cursor_settings" ]; then
+    ok "settings"
+else
+    warn "Cursor settings are missing" "chezmoi apply --source $DOTFILES_DIR"
+fi
+
+_mcp="$HOME/.cursor/mcp.json"
+if [ -s "$_mcp" ]; then
+    if command -v jq >/dev/null 2>&1; then
+        _servers="$(jq -r '.mcpServers // {} | keys[]' "$_mcp" 2>/dev/null)"
+        if [ -n "$_servers" ]; then
+            while IFS= read -r _srv; do
+                [ -n "$_srv" ] || continue
+                ok "mcp  $_srv"
+            done <<EOF
+$_servers
+EOF
+        else
+            warn "mcp.json has no servers"
+        fi
+    else
+        ok "mcp.json"
+    fi
+else
+    bad "mcp.json is missing" "need the age key, then chezmoi apply --source $DOTFILES_DIR"
+fi
+
+_cursor_src="$DOTFILES_DIR/dot_cursor"
+
+if [ -d "$_cursor_src/commands" ]; then
+    for _src in "$_cursor_src/commands"/*.md; do
+        [ -f "$_src" ] || continue
+        _name="$(basename "$_src" .md)"
+        if [ -f "$HOME/.cursor/commands/${_name}.md" ]; then
+            ok "/$_name"
+        else
+            bad "/$_name  not applied" \
+                "chezmoi apply --source $DOTFILES_DIR $HOME/.cursor/commands/${_name}.md"
+        fi
+    done
+fi
+
+if [ -d "$_cursor_src/skills" ]; then
+    for _src in "$_cursor_src/skills"/*/SKILL.md; do
+        [ -f "$_src" ] || continue
+        _name="$(basename "$(dirname "$_src")")"
+        if [ -f "$HOME/.cursor/skills/${_name}/SKILL.md" ]; then
+            ok "skill  $_name"
+        else
+            bad "skill  $_name  not applied" \
+                "chezmoi apply --source $DOTFILES_DIR $HOME/.cursor/skills/${_name}/SKILL.md"
+        fi
+    done
+fi
+
+if [ -d "$_cursor_src/rules" ]; then
+    for _src in "$_cursor_src/rules"/*.mdc; do
+        [ -f "$_src" ] || continue
+        _name="$(basename "$_src")"
+        if [ -f "$HOME/.cursor/rules/$_name" ]; then
+            ok "rule  ${_name%.mdc}"
+        else
+            bad "rule  ${_name%.mdc}  not applied" \
+                "chezmoi apply --source $DOTFILES_DIR $HOME/.cursor/rules/$_name"
+        fi
+    done
+fi
+
+if [ -d "$HOME/.cursor/commands" ]; then
+    for _live in "$HOME/.cursor/commands"/*.md; do
+        [ -f "$_live" ] || continue
+        _name="$(basename "$_live")"
+        if [ ! -f "$_cursor_src/commands/$_name" ]; then
+            warn "/${_name%.md}  only on this machine" "chezmoi add $HOME/.cursor/commands/$_name"
+        fi
+    done
+fi
+
+if [ -d "$HOME/.cursor/monthly-hours" ]; then
+    ok "monthly-hours scripts  ~/.cursor/monthly-hours"
+else
+    warn "monthly-hours scripts are missing" \
+         "/monthly-hours and /monthly-invoice need ~/.cursor/monthly-hours — that folder is not in the repo"
+fi
+
 # ------------------------------------------------------------------ Shell ---
 
 ui_section "Shell"
@@ -149,7 +245,7 @@ esac
 if [ -f "$HOME/.zshrc" ]; then
     ok "~/.zshrc  present"
 else
-    bad "~/.zshrc is missing" "chezmoi apply ~/.zshrc"
+    bad "~/.zshrc is missing" "chezmoi apply --source $DOTFILES_DIR ~/.zshrc"
 fi
 
 if [ -f "$HOME/.oh-my-zsh/oh-my-zsh.sh" ]; then
@@ -208,7 +304,8 @@ if command -v asdf >/dev/null 2>&1 && [ -f "$HOME/.tool-versions" ]; then
         fi
     done < "$HOME/.tool-versions"
 elif [ ! -f "$HOME/.tool-versions" ]; then
-    warn "~/.tool-versions is missing" "chezmoi apply ~/.tool-versions"
+    warn "~/.tool-versions is not applied" \
+         "chezmoi init --apply --source $DOTFILES_DIR"
 fi
 
 # ---------------------------------------------------------------- Summary ---

@@ -113,7 +113,10 @@ fi
 
 ui_step "Apply"
 ui_info "chezmoi writes configs, then brew bundle, oh-my-zsh, and macOS defaults"
-if chezmoi source-path >/dev/null 2>&1; then
+# source-path exits 0 even when the directory does not exist (the default is
+# ~/.local/share/chezmoi). Only skip init when that path is a real checkout.
+_src="$(chezmoi source-path 2>/dev/null || true)"
+if [ -d "$_src" ] && [ -f "$_src/.chezmoi.toml.tmpl" ]; then
     ui_info "chezmoi already initialized — applying"
     if chezmoi apply --source "$DOTFILES_DIR"; then
         ui_ok "applied"

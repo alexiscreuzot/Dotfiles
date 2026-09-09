@@ -1,4 +1,4 @@
-sourceDir = "~/Developer/Dotfiles"
+sourceDir = "{{ .chezmoi.homeDir }}/Developer/Dotfiles"
 encryption = "age"
 
 [edit]
@@ -6,5 +6,5 @@ encryption = "age"
     args = ["--wait"]
 
 [age]
-    identity = "~/.config/chezmoi/key.txt"
+    identity = "{{ .chezmoi.homeDir }}/.config/chezmoi/key.txt"
     recipient = "age1u7wyjcdsuvyszhxqlhztzflycyv7lcw9tqghkl9y59mj3t04432qk32yhr"
