@@ -36,6 +36,7 @@ brew "portaudio"
 # Swift / iOS development
 brew "swiftformat"
 brew "swiftlint"
+brew "swiftgen"
 brew "xcodegen"
 brew "periphery"
 
