@@ -51,14 +51,6 @@
     }
   },
   "agent": {
-    "sandbox_permissions": {
-      "write_paths": [
-        {
-          "requested": "/Users/acreuzot/Developer/_sandbox/ai_merits_showcase",
-          "resolved": "/Users/acreuzot/Developer/_sandbox/ai_merits_showcase"
-        }
-      ]
-    },
     "default_model": { "provider": "mlx-local", "model": "/Users/acreuzot/models/qwen3-coder-30b-3bit" }
   }
 }

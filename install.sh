@@ -4,7 +4,8 @@
 #   sh -c "$(curl -fsSL "https://raw.githubusercontent.com/alexiscreuzot/Dotfiles/master/install.sh?$(date +%s)")"
 set -e
 
-DOTFILES_DIR="$HOME/Developer/Dotfiles"
+DOTFILES_DIR="$HOME/Developer/alexiscreuzot/Dotfiles"
+DOTFILES_LINK="$HOME/Developer/Dotfiles"
 REPO_SSH="git@github.com:alexiscreuzot/Dotfiles.git"
 DOTFILES_STEPS=9
 DOTFILES_STEP=0
@@ -320,6 +321,7 @@ else
 fi
 
 ui_step "Clone"
+mkdir -p "$HOME/Developer/alexiscreuzot"
 if [ -d "$DOTFILES_DIR/.git" ]; then
     ui_ok "already cloned  $DOTFILES_DIR"
     ui_info "pulling latest"
@@ -337,7 +339,6 @@ elif [ -d "$DOTFILES_DIR" ]; then
         exit 1
     fi
 else
-    mkdir -p "$HOME/Developer"
     ui_info "cloning over SSH"
     if git clone "$REPO_SSH" "$DOTFILES_DIR"; then
         ui_ok "cloned  $DOTFILES_DIR"
@@ -346,6 +347,10 @@ else
         ui_note "add a key at https://github.com/settings/keys and re-run"
         exit 1
     fi
+fi
+if [ -L "$DOTFILES_LINK" ] || [ ! -e "$DOTFILES_LINK" ]; then
+    ln -sfn alexiscreuzot/Dotfiles "$DOTFILES_LINK"
+    ui_ok "link  $DOTFILES_LINK → alexiscreuzot/Dotfiles"
 fi
 
 export DOTFILES_STEPS DOTFILES_STEP DOTFILES_FROM_INSTALL=1

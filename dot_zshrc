@@ -11,10 +11,6 @@ unset file;
 
 [ -f /opt/homebrew/opt/asdf/libexec/asdf.sh ] && . /opt/homebrew/opt/asdf/libexec/asdf.sh
 
-# Added by LM Studio CLI (lms)
-[ -d "$HOME/.lmstudio/bin" ] && export PATH="$PATH:$HOME/.lmstudio/bin"
-# End of LM Studio CLI section
-
 export PATH="$HOME/.local/bin:$PATH"
 
 # Shell enhancements — each one is skipped when the brew formula isn't installed

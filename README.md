@@ -14,7 +14,7 @@ sh -c "$(curl -fsSL "https://raw.githubusercontent.com/alexiscreuzot/Dotfiles/ma
 
 </div>
 
-A fresh Mac installs the toolchain, signs in to GitHub over SSH, restores encrypted secrets, and applies every config in this repo. When it finishes, a login zsh starts with aliases and path already loaded.
+A fresh Mac installs the toolchain, signs in to GitHub over SSH, restores encrypted secrets, and applies every config in this repo. The checkout lives at `~/Developer/alexiscreuzot/Dotfiles`, with a symlink at `~/Developer/Dotfiles` so `~/.zshrc` and chezmoi keep a stable path. When it finishes, a login zsh starts with aliases and path already loaded.
 
 `install.sh` installs **Bitwarden** first, then authenticates GitHub in Safari so the extension can fill the login. `gh` generates an `id_ed25519` key and uploads it. The only remaining paste is the **age secret key** into `~/.config/chezmoi/key.txt`.
 
@@ -46,7 +46,7 @@ Scripts that run as part of `chezmoi apply`:
 | --- | --- | --- |
 | Brewfile changes | `run_onchange_before_10-brew-bundle.sh.tmpl` | `brew bundle` |
 | First apply / script changes | `run_once_after_20-oh-my-zsh.sh` | Install oh-my-zsh and link the Spaceship theme |
-| Script changes | `run_onchange_after_30-macos-defaults.sh.tmpl` | Finder, keyboard, screenshots, Dock pins |
+| Script changes | `run_onchange_after_30-macos-defaults.sh.tmpl` | Finder, keyboard, Arc, Raycast, screenshots, Dock pins |
 | requirements.txt changes | `run_onchange_after_40-monthly-hours-venv.sh.tmpl` | Invoice PDF venv (`reportlab`) |
 
 ```mermaid

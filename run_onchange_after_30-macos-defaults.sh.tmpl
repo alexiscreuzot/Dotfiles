@@ -10,9 +10,11 @@ defaults write com.apple.finder ShowStatusBar -bool true
 defaults write com.apple.finder FXEnableExtensionChangeWarning -bool false
 
 # --- Keyboard ---
-defaults write NSGlobalDomain KeyRepeat -int 2
-defaults write NSGlobalDomain InitialKeyRepeat -int 15
-defaults write NSGlobalDomain ApplePressAndHoldEnabled -bool false
+# 1 / 10 is a step faster than the System Settings sliders (2 / 15).
+defaults write NSGlobalDomain KeyRepeat -int 1
+defaults write NSGlobalDomain InitialKeyRepeat -int 10
+# Hold a letter for accents (é è à ç). Arrows and delete still repeat.
+defaults write NSGlobalDomain ApplePressAndHoldEnabled -bool true
 
 # --- Screenshots ---
 mkdir -p "$HOME/Screenshots"
@@ -97,6 +99,50 @@ with plist_path.open("wb") as f:
 PY
     defaults import com.apple.dock "$_dock_plist"
     rm -f "$_dock_plist"
+fi
+
+# --- Default browser: Arc ---
+if [ -d "/Applications/Arc.app" ]; then
+    python3 - <<'PY'
+import ctypes
+import ctypes.util
+
+cf = ctypes.cdll.LoadLibrary(ctypes.util.find_library("CoreFoundation"))
+cs = ctypes.cdll.LoadLibrary(
+    "/System/Library/Frameworks/CoreServices.framework/CoreServices"
+)
+
+kCFStringEncodingUTF8 = 0x08000100
+cf.CFStringCreateWithCString.restype = ctypes.c_void_p
+cf.CFStringCreateWithCString.argtypes = [
+    ctypes.c_void_p,
+    ctypes.c_char_p,
+    ctypes.c_uint32,
+]
+cs.LSSetDefaultHandlerForURLScheme.restype = ctypes.c_int32
+cs.LSSetDefaultHandlerForURLScheme.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
+
+def cfstr(text):
+    return cf.CFStringCreateWithCString(None, text.encode(), kCFStringEncodingUTF8)
+
+bundle = cfstr("company.thebrowser.Browser")
+for scheme in ("http", "https"):
+    cs.LSSetDefaultHandlerForURLScheme(cfstr(scheme), bundle)
+PY
+fi
+
+# --- Raycast takes Cmd+Space from Spotlight ---
+# 64 = Show Spotlight search, 65 = Show Finder search window.
+defaults write com.apple.symbolichotkeys AppleSymbolicHotKeys \
+    -dict-add 64 '<dict><key>enabled</key><false/></dict>'
+defaults write com.apple.symbolichotkeys AppleSymbolicHotKeys \
+    -dict-add 65 '<dict><key>enabled</key><false/></dict>'
+_activate_settings="/System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings"
+if [ -x "$_activate_settings" ]; then
+    "$_activate_settings" -u
+fi
+if [ -d "/Applications/Raycast.app" ]; then
+    defaults write com.raycast.macos raycastGlobalHotkey -string "Command-49"
 fi
 
 # --- Network volumes: no .DS_Store litter ---
