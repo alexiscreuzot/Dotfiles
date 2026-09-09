@@ -1,6 +1,7 @@
 #!/bin/bash
-# Fresh-Mac entry point:
-#   sh -c "$(curl -fsSL https://raw.githubusercontent.com/alexiscreuzot/Dotfiles/master/install.sh)"
+# Fresh-Mac entry point (timestamp query + no-cache headers so GitHub's CDN
+# cannot serve a stale copy):
+#   sh -c "$(curl -fsSL -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' "https://raw.githubusercontent.com/alexiscreuzot/Dotfiles/master/install.sh?$(date +%s)")"
 set -e
 
 DOTFILES_DIR="$HOME/Developer/Dotfiles"
@@ -286,6 +287,12 @@ fi
 ui_step "Clone"
 if [ -d "$DOTFILES_DIR/.git" ]; then
     ui_ok "already cloned  $DOTFILES_DIR"
+    ui_info "pulling latest"
+    if git -C "$DOTFILES_DIR" pull --ff-only; then
+        ui_ok "up to date"
+    else
+        ui_warn "pull didn't fast-forward — continuing with what's on disk"
+    fi
 elif [ -d "$DOTFILES_DIR" ]; then
     ui_warn "$DOTFILES_DIR exists but is not a git repo"
     if [ -x "$DOTFILES_DIR/bootstrap.sh" ]; then

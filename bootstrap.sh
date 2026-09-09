@@ -40,7 +40,7 @@ if [ -n "$_missing" ]; then
     ui_header
     ui_fail "missing tools:$_missing"
     ui_note "run install.sh first — it will skip anything you already have"
-    ui_note "sh -c \"\$(curl -fsSL https://raw.githubusercontent.com/alexiscreuzot/Dotfiles/master/install.sh)\""
+    ui_note "~/Developer/Dotfiles/install.sh"
     exit 1
 fi
 
