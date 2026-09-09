@@ -59,8 +59,40 @@ if command -v dockutil >/dev/null 2>&1; then
     _dock_add "/Applications/GitHub Desktop.app"
     _dock_add "/System/Applications/Utilities/Terminal.app"
     _dock_add "/System/Applications/System Settings.app"
-    dockutil --add /Applications --view list --display folder --sort name --no-restart >/dev/null
-    dockutil --add "$HOME/Downloads" --view list --display folder --sort dateadded --no-restart >/dev/null
+    # dockutil adds folders as aliases (the shortcut arrow). Write real
+    # directory-tiles instead, matching a Dock folder dragged in by hand.
+    python3 - "$HOME/Downloads" <<'PY'
+import pathlib, plistlib, sys
+
+downloads = pathlib.Path(sys.argv[1]).expanduser().resolve()
+plist_path = pathlib.Path.home() / "Library/Preferences/com.apple.dock.plist"
+
+def folder_tile(path, arrangement):
+    url = path.resolve().as_uri()
+    if not url.endswith("/"):
+        url += "/"
+    return {
+        "tile-data": {
+            "arrangement": arrangement,
+            "displayas": 1,
+            "file-data": {"_CFURLString": url, "_CFURLStringType": 15},
+            "file-label": path.name,
+            "file-type": 2,
+            "preferreditemsize": -1,
+            "showas": 3,
+        },
+        "tile-type": "directory-tile",
+    }
+
+with plist_path.open("rb") as f:
+    dock = plistlib.load(f)
+dock["persistent-others"] = [
+    folder_tile(pathlib.Path("/Applications"), 1),
+    folder_tile(downloads, 2),
+]
+with plist_path.open("wb") as f:
+    plistlib.dump(dock, f, fmt=plistlib.FMT_BINARY)
+PY
 fi
 
 # --- Network volumes: no .DS_Store litter ---

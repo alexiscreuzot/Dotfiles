@@ -10,7 +10,7 @@ description: >
 
 # Monthly invoice
 
-Local-only. All files live under `~/.cursor/monthly-hours/`. Never add this to a repository.
+Scripts live under `~/.cursor/monthly-hours/` (managed by chezmoi). `config.json` and the Word template are age-encrypted. Do not commit generated invoices, Graph tokens, `.ics` files, or `.venv`.
 
 ## Rules
 

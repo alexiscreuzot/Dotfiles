@@ -9,7 +9,7 @@ description: >
 
 # Monthly hours
 
-Local-only. All files live under `~/.cursor/monthly-hours/`. Never add this to a repository.
+Scripts live under `~/.cursor/monthly-hours/` (managed by chezmoi). `config.json` is age-encrypted. Do not commit generated reports, Graph tokens, `.ics` files, or `.venv`.
 
 ## Budget and buckets
 

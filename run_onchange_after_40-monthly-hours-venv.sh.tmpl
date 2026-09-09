@@ -1,0 +1,26 @@
+#!/bin/bash
+# Re-runs whenever the invoice PDF requirements change.
+# requirements hash: {{ include "dot_cursor/monthly-hours/requirements.txt" | sha256sum }}
+
+MH="$HOME/.cursor/monthly-hours"
+REQ="$MH/requirements.txt"
+
+if [ ! -f "$REQ" ]; then
+    echo "monthly-hours is not applied yet, skipping venv"
+    exit 0
+fi
+
+if ! command -v uv >/dev/null 2>&1; then
+    echo "uv not found, skipping monthly-hours venv"
+    exit 0
+fi
+
+if [ ! -x "$MH/.venv/bin/python" ]; then
+    uv venv "$MH/.venv" || {
+        echo "warning: could not create $MH/.venv"
+        exit 0
+    }
+fi
+
+uv pip install --python "$MH/.venv/bin/python" -r "$REQ" || \
+    echo "warning: monthly-hours venv install failed — see output above"

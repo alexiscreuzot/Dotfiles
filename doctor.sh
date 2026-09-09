@@ -225,11 +225,24 @@ if [ -d "$HOME/.cursor/commands" ]; then
     done
 fi
 
-if [ -d "$HOME/.cursor/monthly-hours" ]; then
-    ok "monthly-hours scripts  ~/.cursor/monthly-hours"
+_mh="$HOME/.cursor/monthly-hours"
+if [ -f "$_mh/report.py" ] && [ -f "$_mh/invoice.py" ]; then
+    ok "monthly-hours scripts"
 else
-    warn "monthly-hours scripts are missing" \
-         "/monthly-hours and /monthly-invoice need ~/.cursor/monthly-hours — that folder is not in the repo"
+    bad "monthly-hours scripts are missing" \
+        "chezmoi apply --source $DOTFILES_DIR $_mh"
+fi
+if [ -s "$_mh/config.json" ]; then
+    ok "monthly-hours config"
+else
+    bad "monthly-hours config.json is missing" \
+        "need the age key, then chezmoi apply --source $DOTFILES_DIR"
+fi
+if [ -x "$_mh/.venv/bin/python" ]; then
+    ok "monthly-hours venv"
+else
+    warn "monthly-hours venv is missing" \
+         "chezmoi apply — the apply hook creates $_mh/.venv"
 fi
 
 # ------------------------------------------------------------------ Shell ---
