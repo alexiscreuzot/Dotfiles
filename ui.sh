@@ -84,9 +84,9 @@ ui_menu() {
     trap 'printf "\033[?25h" >/dev/tty' INT
 
     while true; do
-        _key=""
-        IFS= read -r -s -n 1 _key < /dev/tty || _key=""
-        if [ "$_key" = "$(printf '\033')" ]; then
+        _ui_ch=""
+        IFS= read -r -s -n 1 _ui_ch < /dev/tty || _ui_ch=""
+        if [ "$_ui_ch" = "$(printf '\033')" ]; then
             _rest=""
             IFS= read -r -s -n 2 -t 1 _rest < /dev/tty || _rest=""
             case "$_rest" in
@@ -105,10 +105,12 @@ ui_menu() {
                     fi
                     ;;
             esac
-        elif [ -z "$_key" ] || [ "$_key" = "$(printf '\n')" ] || [ "$_key" = "$(printf '\r')" ]; then
+        elif [ -z "$_ui_ch" ] || [ "$_ui_ch" = "$(printf '\n')" ] || [ "$_ui_ch" = "$(printf '\r')" ]; then
             printf '\033[?25h' >/dev/tty
             trap - INT
             UI_CHOICE=$UI_SEL
+            # CR+LF leaves a leftover newline that the next read would swallow
+            IFS= read -r -s -n 1 -t 0 _drain < /dev/tty || true
             return 0
         else
             continue

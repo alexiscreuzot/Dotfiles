@@ -49,14 +49,14 @@ if [ -z "${DOTFILES_FROM_INSTALL:-}" ]; then
 fi
 
 ui_step "age private key"
-_key="$HOME/.config/chezmoi/key.txt"
-if [ -s "$_key" ]; then
-    ui_ok "already in place  $_key"
+_age_key="$HOME/.config/chezmoi/key.txt"
+if [ -s "$_age_key" ]; then
+    ui_ok "already in place  $_age_key"
 else
     mkdir -p "$HOME/.config/chezmoi"
     ui_info "encrypted secrets need your age key from Bitwarden"
     ui_note "item looks like AGE-SECRET-KEY-..."
-    ui_note "it will be written to  $_key"
+    ui_note "it will be written to  $_age_key"
     ui_menu "How do you want to provide the age key?" "" \
         "Paste it here" \
         "I already saved it to the file" \
@@ -66,12 +66,27 @@ else
             printf '          %sPaste the key, then Enter%s\n' "$C_DIM" "$C_RESET"
             printf '          '
             _pasted=""
-            IFS= read -r _pasted < /dev/tty || _pasted=""
-            _pasted="$(printf '%s' "$_pasted" | tr -d '\r' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+            _tries=0
+            while [ "$_tries" -lt 2 ]; do
+                _line=""
+                IFS= read -r _line < /dev/tty || _line=""
+                _line="$(printf '%s' "$_line" | tr -d '\r' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+                if [ -n "$_line" ]; then
+                    _pasted="$_line"
+                    break
+                fi
+                _tries=$((_tries + 1))
+            done
             if printf '%s' "$_pasted" | grep -q '^AGE-SECRET-KEY-'; then
-                printf '%s\n' "$_pasted" > "$_key"
-                chmod 600 "$_key"
-                ui_ok "saved  $_key"
+                mkdir -p "$HOME/.config/chezmoi"
+                umask 077
+                printf '%s\n' "$_pasted" > "$_age_key"
+                chmod 600 "$_age_key"
+                if [ -s "$_age_key" ]; then
+                    ui_ok "saved  $_age_key"
+                else
+                    ui_fail "could not write  $_age_key"
+                fi
             elif [ -n "$_pasted" ]; then
                 ui_warn "that doesn't look like an age key — not writing the file"
                 ui_note "it should start with AGE-SECRET-KEY-"
@@ -80,8 +95,8 @@ else
             fi
             ;;
         2)
-            if [ -s "$_key" ]; then
-                chmod 600 "$_key"
+            if [ -s "$_age_key" ]; then
+                chmod 600 "$_age_key"
                 ui_ok "key is in place"
             else
                 ui_warn "file is still missing or empty — encrypted files will be skipped"
@@ -91,8 +106,8 @@ else
             ui_info "skipped — encrypted secrets won't apply until the key is there"
             ;;
     esac
-    if [ -f "$_key" ]; then
-        chmod 600 "$_key"
+    if [ -f "$_age_key" ]; then
+        chmod 600 "$_age_key"
     fi
 fi
 
