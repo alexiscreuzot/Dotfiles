@@ -14,7 +14,7 @@ sh -c "$(curl -fsSL https://raw.githubusercontent.com/alexiscreuzot/Dotfiles/mas
 
 </div>
 
-A fresh Mac installs the toolchain, signs in to GitHub over SSH, restores encrypted secrets, and applies every config in this repo. Restart the terminal when it finishes.
+A fresh Mac installs the toolchain, signs in to GitHub over SSH, restores encrypted secrets, and applies every config in this repo. When it finishes, a login zsh starts with aliases and path already loaded.
 
 `install.sh` installs **Bitwarden** first, then authenticates GitHub in Safari so the extension can fill the login. `gh` generates an `id_ed25519` key and uploads it. The only remaining paste is the **age secret key** into `~/.config/chezmoi/key.txt`.
 

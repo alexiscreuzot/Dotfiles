@@ -5,7 +5,7 @@ set -e
 
 DOTFILES_DIR="$HOME/Developer/Dotfiles"
 REPO_SSH="git@github.com:alexiscreuzot/Dotfiles.git"
-DOTFILES_STEPS=8
+DOTFILES_STEPS=9
 DOTFILES_STEP=0
 
 # --- UI (keep in sync with ui.sh; inlined so a curled copy still looks right) ---

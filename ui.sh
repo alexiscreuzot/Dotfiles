@@ -62,6 +62,6 @@ ui_ask() {
 
 ui_done() {
     printf '\n'
-    printf '  %s✓  Done.%s  Restart the terminal to pick up the new shell.\n' "$C_GREEN" "$C_RESET"
+    printf '  %s✓  Done.%s  Loading a login zsh with your aliases and path.\n' "$C_GREEN" "$C_RESET"
     printf '\n'
 }
