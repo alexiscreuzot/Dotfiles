@@ -14,6 +14,7 @@ brew "zoxide"
 brew "zsh-autosuggestions"
 brew "zsh-syntax-highlighting"
 brew "gh"
+brew "dockutil"
 brew "tmux"
 brew "watchman"
 
@@ -68,6 +69,7 @@ cask "prince"
 
 # Casks — apps
 cask "bitwarden"
+cask "readdle-spark"
 cask "iina"
 cask "arc"
 cask "raycast"

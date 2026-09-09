@@ -22,6 +22,46 @@ defaults write com.apple.screencapture type -string "png"
 # --- Dock ---
 defaults write com.apple.dock autohide -bool true
 defaults write com.apple.dock show-recents -bool false
+defaults write com.apple.dock tilesize -int 55
+defaults write com.apple.dock mineffect -string scale
+defaults write com.apple.dock minimize-to-application -bool true
+
+# Pinned apps match the current machine. Missing apps are skipped so a
+# fresh Mac without Xcode or Outlook still gets the rest.
+_dock_add() {
+    [ -e "$1" ] || return 0
+    dockutil --add "$1" --no-restart >/dev/null
+}
+
+if command -v dockutil >/dev/null 2>&1; then
+    dockutil --remove all --no-restart >/dev/null
+    _dock_add "/System/Applications/Music.app"
+    _dock_add "/System/Applications/App Store.app"
+    _dock_add "/System/Applications/Calendar.app"
+    _dock_add "/Applications/Slack.app"
+    _dock_add "/Applications/Microsoft Teams.app"
+    _dock_add "/Applications/Microsoft Outlook.app"
+    _dock_add "/System/Applications/Notes.app"
+    _dock_add "/Applications/Spark Desktop.app"
+    _dock_add "/Applications/Arc.app"
+    _dock_add "/Applications/Xcodes.app"
+    _xcode=""
+    if [ -d /Applications/Xcode.app ]; then
+        _xcode="/Applications/Xcode.app"
+    else
+        _xcode="$(ls -1d /Applications/Xcode-*.app 2>/dev/null | sort -V | tail -1 || true)"
+    fi
+    if [ -n "$_xcode" ]; then
+        _dock_add "$_xcode"
+        _dock_add "$_xcode/Contents/Developer/Applications/Simulator.app"
+    fi
+    _dock_add "/Applications/Cursor.app"
+    _dock_add "/Applications/GitHub Desktop.app"
+    _dock_add "/System/Applications/Utilities/Terminal.app"
+    _dock_add "/System/Applications/System Settings.app"
+    dockutil --add /Applications --view list --display folder --sort name --no-restart >/dev/null
+    dockutil --add "$HOME/Downloads" --view list --display folder --sort dateadded --no-restart >/dev/null
+fi
 
 # --- Network volumes: no .DS_Store litter ---
 defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool true

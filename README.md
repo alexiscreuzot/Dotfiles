@@ -46,7 +46,7 @@ Scripts that run as part of `chezmoi apply`:
 | --- | --- | --- |
 | Brewfile changes | `run_onchange_before_10-brew-bundle.sh.tmpl` | `brew bundle` |
 | First apply / script changes | `run_once_after_20-oh-my-zsh.sh` | Install oh-my-zsh and link the Spaceship theme |
-| Script changes | `run_onchange_after_30-macos-defaults.sh.tmpl` | Finder, Dock, keyboard, screenshots |
+| Script changes | `run_onchange_after_30-macos-defaults.sh.tmpl` | Finder, keyboard, screenshots, Dock pins |
 
 ```mermaid
 flowchart LR
