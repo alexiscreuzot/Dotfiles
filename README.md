@@ -113,4 +113,4 @@ SSH **keys** are not in this repo. `install.sh` has `gh` generate `id_ed25519` a
 ## Notes
 
 - Apps that were installed outside Homebrew before this setup will warn on `brew bundle`. Adopt them with `brew install --cask --force <name>` (quit the app first).
-- Sublime settings are managed; Package Control itself is installed once from the Command Palette on first launch.
+- Sublime settings are managed (theme and color scheme Auto, following macOS). Package Control itself is installed once from the Command Palette on first launch.
