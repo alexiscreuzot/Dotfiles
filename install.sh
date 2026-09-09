@@ -52,25 +52,59 @@ ui_ask() {
     _note="${2:-}"
     _opt1="${3:-Continue}"
     _opt2="${4:-Skip}"
+    _sel=1
+
     printf '\n       %s?%s  %s\n' "$C_CYAN" "$C_RESET" "$_prompt"
     if [ -n "$_note" ]; then
         ui_note "$_note"
     fi
     printf '\n'
-    printf '          %s1%s  %s\n' "$C_BOLD" "$C_RESET" "$_opt1"
-    printf '          %s2%s  %s\n' "$C_BOLD" "$C_RESET" "$_opt2"
-    if [ ! -t 0 ]; then
+
+    if [ ! -r /dev/tty ] || [ ! -t 1 ]; then
         ui_info "no tty — choosing 1"
         return 0
     fi
+
+    _ui_menu_draw() {
+        if [ "$_sel" -eq 1 ]; then
+            printf '          %s▸ %s%s\n' "$C_BOLD$C_CYAN" "$_opt1" "$C_RESET"
+        else
+            printf '            %s%s%s\n' "$C_DIM" "$_opt1" "$C_RESET"
+        fi
+        if [ "$_sel" -eq 2 ]; then
+            printf '          %s▸ %s%s\n' "$C_BOLD$C_CYAN" "$_opt2" "$C_RESET"
+        else
+            printf '            %s%s%s\n' "$C_DIM" "$_opt2" "$C_RESET"
+        fi
+        printf '          %s↑↓  move · Enter  confirm%s\n' "$C_DIM" "$C_RESET"
+    }
+
+    _ui_menu_draw
+    printf '\033[?25l' >/dev/tty
+    trap 'printf "\033[?25h" >/dev/tty' INT
+
     while true; do
-        printf '          %sChoice [1]%s  ' "$C_DIM" "$C_RESET"
-        read -r _reply || _reply=""
-        case "$_reply" in
-            ""|1) return 0 ;;
-            2)    return 1 ;;
-            *)    ui_note "type 1 or 2" ;;
-        esac
+        _key=""
+        IFS= read -r -s -n 1 _key < /dev/tty || _key=""
+        if [ "$_key" = "$(printf '\033')" ]; then
+            _rest=""
+            IFS= read -r -s -n 2 -t 1 _rest < /dev/tty || _rest=""
+            case "$_rest" in
+                "[A"|"[D") _sel=1 ;;
+                "[B"|"[C") _sel=2 ;;
+            esac
+        elif [ -z "$_key" ] || [ "$_key" = "$(printf '\n')" ] || [ "$_key" = "$(printf '\r')" ]; then
+            printf '\033[?25h' >/dev/tty
+            trap - INT
+            if [ "$_sel" -eq 1 ]; then
+                return 0
+            fi
+            return 1
+        else
+            continue
+        fi
+        printf '\033[3A'
+        _ui_menu_draw
     done
 }
 

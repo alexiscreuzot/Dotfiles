@@ -40,33 +40,92 @@ ui_note() {
     printf '          %s%s%s\n' "$C_DIM" "$1" "$C_RESET"
 }
 
-# Prompt with a 1 / 2 selection. Returns 0 for option 1, 1 for option 2.
-# Usage: ui_ask "question" ["note"] ["option 1"] ["option 2"]
-ui_ask() {
+# Arrow-key menu. Sets UI_CHOICE to the 1-based index.
+# Usage: ui_menu "question" "note" "option 1" ["option 2" ...]
+ui_menu() {
     _prompt="$1"
-    _note="${2:-}"
-    _opt1="${3:-Continue}"
-    _opt2="${4:-Skip}"
+    _note="$2"
+    shift 2
+    UI_N=0
+    for _o in "$@"; do
+        UI_N=$((UI_N + 1))
+        eval "UI_OPT_${UI_N}=\"\$_o\""
+    done
+    UI_SEL=1
+    UI_CHOICE=1
+
     printf '\n       %s?%s  %s\n' "$C_CYAN" "$C_RESET" "$_prompt"
     if [ -n "$_note" ]; then
         ui_note "$_note"
     fi
     printf '\n'
-    printf '          %s1%s  %s\n' "$C_BOLD" "$C_RESET" "$_opt1"
-    printf '          %s2%s  %s\n' "$C_BOLD" "$C_RESET" "$_opt2"
-    if [ ! -t 0 ]; then
+
+    if [ ! -r /dev/tty ] || [ ! -t 1 ]; then
         ui_info "no tty — choosing 1"
         return 0
     fi
+
+    _ui_menu_draw() {
+        _i=1
+        while [ "$_i" -le "$UI_N" ]; do
+            eval "_o=\$UI_OPT_${_i}"
+            if [ "$_i" -eq "$UI_SEL" ]; then
+                printf '          %s▸ %s%s\n' "$C_BOLD$C_CYAN" "$_o" "$C_RESET"
+            else
+                printf '            %s%s%s\n' "$C_DIM" "$_o" "$C_RESET"
+            fi
+            _i=$((_i + 1))
+        done
+        printf '          %s↑↓  move · Enter  confirm%s\n' "$C_DIM" "$C_RESET"
+    }
+
+    _ui_menu_draw
+    printf '\033[?25l' >/dev/tty
+    trap 'printf "\033[?25h" >/dev/tty' INT
+
     while true; do
-        printf '          %sChoice [1]%s  ' "$C_DIM" "$C_RESET"
-        read -r _reply || _reply=""
-        case "$_reply" in
-            ""|1) return 0 ;;
-            2)    return 1 ;;
-            *)    ui_note "type 1 or 2" ;;
-        esac
+        _key=""
+        IFS= read -r -s -n 1 _key < /dev/tty || _key=""
+        if [ "$_key" = "$(printf '\033')" ]; then
+            _rest=""
+            IFS= read -r -s -n 2 -t 1 _rest < /dev/tty || _rest=""
+            case "$_rest" in
+                "[A"|"[D")
+                    if [ "$UI_SEL" -gt 1 ]; then
+                        UI_SEL=$((UI_SEL - 1))
+                    else
+                        UI_SEL=$UI_N
+                    fi
+                    ;;
+                "[B"|"[C")
+                    if [ "$UI_SEL" -lt "$UI_N" ]; then
+                        UI_SEL=$((UI_SEL + 1))
+                    else
+                        UI_SEL=1
+                    fi
+                    ;;
+            esac
+        elif [ -z "$_key" ] || [ "$_key" = "$(printf '\n')" ] || [ "$_key" = "$(printf '\r')" ]; then
+            printf '\033[?25h' >/dev/tty
+            trap - INT
+            UI_CHOICE=$UI_SEL
+            return 0
+        else
+            continue
+        fi
+        printf '\033[%sA' $((UI_N + 1))
+        _ui_menu_draw
     done
+}
+
+# Two-option wrapper. Returns 0 for option 1, 1 for option 2.
+# Usage: ui_ask "question" ["note"] ["option 1"] ["option 2"]
+ui_ask() {
+    ui_menu "$1" "${2:-}" "${3:-Continue}" "${4:-Skip}"
+    if [ "$UI_CHOICE" -eq 1 ]; then
+        return 0
+    fi
+    return 1
 }
 
 ui_done() {
