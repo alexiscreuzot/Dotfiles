@@ -3,7 +3,7 @@
 	[
 		"Vintage",
 	],
-	"theme": "Adaptive.sublime-theme",
-	"color_scheme": "Packages/Monokai Dark/Monokai Dark.tmTheme",
+	"theme": "auto",
+	"color_scheme": "auto",
 	"index_files": true,
 }

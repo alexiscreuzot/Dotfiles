@@ -5,8 +5,6 @@
 	],
 	"installed_packages":
 	[
-		"Monokai Dark",
-		"Monokai++",
 		"Package Control",
 	],
 }
