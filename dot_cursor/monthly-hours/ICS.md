@@ -8,7 +8,7 @@ The URL is stored locally in `config.json` `icsUrl` (not in any repo).
 
 ```bash
 python3 ~/.cursor/monthly-hours/report.py 2026-08
-python3 ~/.cursor/monthly-hours/scrum-hours.py 2026-08 --all
+python3 ~/.cursor/monthly-hours/scrum_hours.py 2026-08 --all
 ```
 
 ## New Outlook for Mac (what you have)
@@ -27,4 +27,4 @@ Turn off New Outlook (Outlook menu → **Legacy Outlook** / uncheck New Outlook)
 
 ## After IT approves Graph
 
-`python3 ~/.cursor/monthly-hours/graph-auth.py login` and drop `--ics`.
+`python3 ~/.cursor/monthly-hours/graph_auth.py login` and drop `--ics`.

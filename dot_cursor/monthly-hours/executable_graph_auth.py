@@ -88,7 +88,7 @@ def refresh(tokens: dict) -> dict:
     cfg = _graph_cfg()
     refresh_token = tokens.get("refresh_token")
     if not refresh_token:
-        raise SystemExit("No refresh token. Run: python3 graph-auth.py login")
+        raise SystemExit("No refresh token. Run: python3 graph_auth.py login")
     payload = _post(
         _token_url(),
         {
@@ -109,7 +109,7 @@ def refresh(tokens: dict) -> dict:
 def access_token() -> str:
     tokens = load_tokens()
     if not tokens:
-        raise SystemExit("Not logged in. Run: python3 graph-auth.py login")
+        raise SystemExit("Not logged in. Run: python3 graph_auth.py login")
     expires_at = datetime.fromisoformat(tokens["expires_at"])
     if expires_at <= datetime.now(timezone.utc):
         tokens = refresh(tokens)
@@ -263,7 +263,7 @@ def login_device() -> None:
             "Login failed: "
             + payload.get("error_description", err or json.dumps(payload)[:300])
         )
-    raise SystemExit("Login timed out. Run graph-auth.py login again.")
+    raise SystemExit("Login timed out. Run graph_auth.py login again.")
 
 
 def login(mode: str = "browser") -> None:

@@ -1,12 +1,10 @@
 ---
+description: Swift style and semantic navigation.
+globs: **/*.swift
 alwaysApply: false
 ---
 
-Prefer using SourceKit-LSP information for Swift navigation.
-Use symbol definitions instead of text search.
-Before refactoring functions, check references across modules.
-
-Swift coding guidelines:
+# Swift
 
 Prefer:
 - value types (struct)
@@ -20,3 +18,11 @@ Avoid:
 - large UIViewControllers
 
 Prefer dependency injection for services.
+
+## Navigation
+
+Prefer SourceKit-LSP and symbol-based tools over text search: go to definition,
+find references, symbol search. Use text search only for comments, strings, and
+config files.
+
+Check references across modules before refactoring a function.

@@ -13,6 +13,7 @@ from pathlib import Path
 
 DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(DIR))
+import excel_copy
 import graph_auth
 
 
@@ -212,24 +213,12 @@ def weekly_grid(
 
 
 def write_excel_copy(month: str, grid: list[list[int]]) -> Path:
-    html_path = DIR / f"{month}-hours.html"
-    csv_path = DIR / f"{month}-hours.csv"
-    rows_html = []
-    rows_csv = []
-    for row in grid:
-        rows_html.append("<tr>" + "".join(f"<td>{n}</td>" for n in row) + "</tr>")
-        rows_csv.append(",".join(str(n) for n in row))
-    html_path.write_text(
-        "<!DOCTYPE html>\n<html><head><meta charset=\"utf-8\"></head><body>\n"
-        "<table border=\"1\" cellpadding=\"6\" cellspacing=\"0\">\n"
-        + "\n".join(rows_html)
-        + "\n</table>\n<p>Select the table, copy, click the first Excel cell, paste.</p>\n"
-        "</body></html>\n"
+    return excel_copy.write(
+        DIR / f"{month}-hours",
+        [[str(n) for n in row] for row in grid],
+        "Select the table, copy, click the first Excel cell, paste.",
+        open_html=True,
     )
-    csv_path.write_text("\n".join(rows_csv) + "\n")
-    subprocess.Popen(["open", str(html_path)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    print(f"EXCEL_COPY {html_path}", flush=True)
-    return html_path
 
 
 def main() -> None:
@@ -257,7 +246,7 @@ def main() -> None:
         elif cfg.get("icsUrl"):
             scrum_args += ["--ics-url", cfg["icsUrl"]]
         try:
-            scrum = run_json("scrum-hours.py", scrum_args)
+            scrum = run_json("scrum_hours.py", scrum_args)
         except subprocess.CalledProcessError as e:
             scrum_error = e.output if isinstance(e.output, str) else (e.stderr or str(e))
             if args.scrum_placeholder is None:
@@ -268,7 +257,7 @@ def main() -> None:
                 )
             scrum = {"hours": args.scrum_placeholder, "events": [], "source": "placeholder"}
 
-    work = run_json("month-work.py", [args.month])
+    work = run_json("month_work.py", [args.month])
     commits = work["commits"]
     tickets = {t["key"]: t for t in work["tickets"]}
     commit_keys = {k for c in commits for k in c["keys"]}

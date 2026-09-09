@@ -1,12 +1,19 @@
 ---
-description: Never run builds or tests — Alexis does that himself.
+description: Never run builds, tests, or other verification commands unless explicitly asked.
 alwaysApply: true
 ---
 
 # Don't build or test
 
-Never run builds or tests. Alexis does that part.
+Never run a build, test, or verification command on your own initiative:
 
-Do not invoke `xcodebuild`, `swift test`, `swift build`, Xcode, simulators, or any other compile/test command unless he explicitly asks you to run one.
+- `xcodebuild`, `swift build`, `swift test`, Xcode, simulators
+- `npm run build`, `npm test`, and equivalents in other toolchains
+- Any long-running compile, test-suite, or CI-style command
 
-Writing or editing test code is fine when the task calls for it. Running those tests is not.
+Make the changes and stop. State what you changed and let Alexis run it himself.
+
+Writing or editing test code is fine when the task calls for it. Running it is not.
+
+Only run these when he explicitly asks ("build it", "run the tests", "verify this
+compiles"), or when a plan he approved lists verification as a step.

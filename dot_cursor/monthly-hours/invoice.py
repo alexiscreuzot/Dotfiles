@@ -16,14 +16,10 @@ import fill_docx
 
 DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(DIR))
+import excel_copy
 import graph_auth
 import report
-import importlib.util
-
-_scrum_spec = importlib.util.spec_from_file_location("scrum_hours", DIR / "scrum-hours.py")
-scrum_hours = importlib.util.module_from_spec(_scrum_spec)
-assert _scrum_spec.loader is not None
-_scrum_spec.loader.exec_module(scrum_hours)
+import scrum_hours
 
 
 def _money(value: float) -> str:
@@ -254,27 +250,11 @@ def load_events(args, start: datetime, end: datetime, tz: ZoneInfo, cfg: dict) -
 
 
 def write_excel_copy(month: str, rows: list[tuple[str, str, int, str]]) -> Path:
-    html_path = DIR / f"{month}-invoice.html"
-    csv_path = DIR / f"{month}-invoice.csv"
-    rows_html = []
-    rows_csv = []
-    for desc, rate, hours, amount in rows:
-        rows_html.append(
-            "<tr>"
-            f"<td>{desc}</td><td>{rate}</td><td>{hours}</td><td>{amount}</td>"
-            "</tr>"
-        )
-        rows_csv.append(",".join([desc.replace(",", " "), rate, str(hours), amount]))
-    html_path.write_text(
-        "<!DOCTYPE html>\n<html><head><meta charset=\"utf-8\"></head><body>\n"
-        "<table border=\"1\" cellpadding=\"6\" cellspacing=\"0\">\n"
-        + "\n".join(rows_html)
-        + "\n</table>\n<p>Select the table, copy, click the first invoice cell, paste.</p>\n"
-        "</body></html>\n"
+    return excel_copy.write(
+        DIR / f"{month}-invoice",
+        [[desc, rate, str(hours), amount] for desc, rate, hours, amount in rows],
+        "Select the table, copy, click the first invoice cell, paste.",
     )
-    csv_path.write_text("\n".join(rows_csv) + "\n")
-    print(f"EXCEL_COPY {html_path}", flush=True)
-    return html_path
 
 
 def main() -> None:

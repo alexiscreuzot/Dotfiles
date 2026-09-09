@@ -26,10 +26,10 @@ Scripts live under `~/.cursor/monthly-hours/` (managed by chezmoi). `config.json
 2. Check Graph login:
 
    ```bash
-   python3 ~/.cursor/monthly-hours/graph-auth.py status
+   python3 ~/.cursor/monthly-hours/graph_auth.py status
    ```
 
-   If that fails, run `python3 ~/.cursor/monthly-hours/graph-auth.py login` (device flow). Sorenson requires **admin consent** for Microsoft Graph Command Line Tools — if the page says the admin was notified, stop. Do **not** publish a calendar (that ICS URL is public). Ask for a **local** `.ics`: in Outlook Calendar, select the Scrum meetings and drag them to the Desktop, then `python3 ~/.cursor/monthly-hours/report.py YYYY-MM --ics ~/Desktop/that-file.ics`. See `~/.cursor/monthly-hours/ICS.md`.
+   If that fails, run `python3 ~/.cursor/monthly-hours/graph_auth.py login` (device flow). Sorenson requires **admin consent** for Microsoft Graph Command Line Tools — if the page says the admin was notified, stop. Do **not** publish a calendar (that ICS URL is public). Ask for a **local** `.ics`: in Outlook Calendar, select the Scrum meetings and drag them to the Desktop, then `python3 ~/.cursor/monthly-hours/report.py YYYY-MM --ics ~/Desktop/that-file.ics`. See `~/.cursor/monthly-hours/ICS.md`.
 3. Run the report (do not run `xcodebuild` or tests):
 
    ```bash
@@ -44,9 +44,9 @@ Scripts live under `~/.cursor/monthly-hours/` (managed by chezmoi). `config.json
 
 | Script | Role |
 |--------|------|
-| `graph-auth.py login\|status\|token` | Device-code OAuth; tokens in `graph-token.json` (blocked at Sorenson until IT consents) |
-| `scrum-hours.py YYYY-MM [--ics FILE]` | Calendar events + hours |
-| `month-work.py YYYY-MM` | Git commits + Jira tickets |
+| `graph_auth.py login\|status\|token` | Device-code OAuth; tokens in `graph-token.json` (blocked at Sorenson until IT consents) |
+| `scrum_hours.py YYYY-MM [--ics FILE]` | Calendar events + hours |
+| `month_work.py YYYY-MM` | Git commits + Jira tickets |
 | `report.py YYYY-MM [--ics FILE]` | Classification + timesheet lines |
 
 Jira credentials come from `forum-iOS/.env` (`jiraEnvPath` in config).

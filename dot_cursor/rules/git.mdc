@@ -1,5 +1,9 @@
-When generating commits:
+---
+description: Commit message style.
+alwaysApply: true
+---
 
-- use imperative style
-- be brief and concise
-- never mention AI, Cursor, Copilot, or any AI tool in commit messages, trailers, or metadata
+# Commits
+
+- Imperative mood.
+- Brief and concise.

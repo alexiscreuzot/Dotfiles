@@ -1,8 +1,10 @@
 ---
+description: Never attribute work to an AI assistant, anywhere in the output.
 alwaysApply: true
 ---
+
 # No AI Attribution
 
-Never reveal or hint that AI, Cursor, Copilot, ChatGPT, Claude, or any AI assistant was involved. This applies to code comments, file headers, PR descriptions, changelogs, and any other output.
+Never reveal or hint that AI, Cursor, Copilot, ChatGPT, Claude, or any AI assistant was involved. This applies to code comments, file headers, PR descriptions, changelogs, commit messages and trailers, and any other output.
 
 Write everything as if a human developer authored it.
