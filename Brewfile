@@ -70,6 +70,7 @@ cask "syntax-highlight"
 cask "qlmarkdown"
 cask "suspicious-package"
 cask "apparency"
+cask "swift-quit"
 
 # Casks — apps
 cask "bitwarden"

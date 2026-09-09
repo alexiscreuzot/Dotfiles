@@ -255,4 +255,38 @@ defaults write com.apple.desktopservices DSDontWriteUSBStores -bool true
 qlmanage -r >/dev/null 2>&1 || true
 qlmanage -r cache >/dev/null 2>&1 || true
 
+# --- Swift Quit: red close button quits the app ---
+if [ -d "/Applications/Swift Quit.app" ]; then
+    defaults write onebadidea.Swift-Quit SwiftQuitSettings -dict \
+        launchAtLogin "true" \
+        menubarIconEnabled "true" \
+        excludeBehaviour "excludeApps" \
+        launchHidden "true" \
+        closeDelay "2"
+    _swift_quit_keep=()
+    for _app in \
+        "/Applications/Slack.app" \
+        "/Applications/Microsoft Teams.app" \
+        "/Applications/Spark Desktop.app" \
+        "/Applications/Microsoft Outlook.app" \
+        "/System/Applications/Music.app" \
+        "/Applications/NordVPN.app" \
+        "/Applications/Bitwarden.app" \
+        "/Applications/Rectangle.app" \
+        "/Applications/Raycast.app" \
+        "/Applications/Loopback.app" \
+        "/Applications/zoom.us.app" \
+        "/Applications/Docker.app"
+    do
+        [ -d "$_app" ] && _swift_quit_keep+=("$_app")
+    done
+    if [ "${#_swift_quit_keep[@]}" -gt 0 ]; then
+        defaults write onebadidea.Swift-Quit SwiftQuitExcludedApps -array "${_swift_quit_keep[@]}"
+    fi
+fi
+
 killall cfprefsd Finder Dock SystemUIServer 2>/dev/null || true
+
+if [ -d "/Applications/Swift Quit.app" ]; then
+    open -gj -a "Swift Quit" 2>/dev/null || true
+fi
