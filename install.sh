@@ -1,7 +1,6 @@
 #!/bin/bash
-# Fresh-Mac entry point (timestamp query + no-cache headers so GitHub's CDN
-# cannot serve a stale copy):
-#   sh -c "$(curl -fsSL -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' "https://raw.githubusercontent.com/alexiscreuzot/Dotfiles/master/install.sh?$(date +%s)")"
+# Fresh-Mac entry point (?$(date +%s) busts GitHub's raw CDN cache):
+#   sh -c "$(curl -fsSL https://raw.githubusercontent.com/alexiscreuzot/Dotfiles/master/install.sh?$(date +%s))"
 set -e
 
 DOTFILES_DIR="$HOME/Developer/Dotfiles"
