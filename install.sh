@@ -113,9 +113,25 @@ ensure_formula() {
     return 0
 }
 
+unlock_ssh() {
+    if [ -f "$HOME/.ssh/id_ed25519" ]; then
+        ssh-add --apple-use-keychain "$HOME/.ssh/id_ed25519" 2>/dev/null || \
+            ssh-add "$HOME/.ssh/id_ed25519" 2>/dev/null || true
+    fi
+}
+
+_ssh_github_hi() {
+    printf '%s\n' "$1" | grep -q "successfully authenticated"
+}
+
 github_ssh_ok() {
-    ssh -o StrictHostKeyChecking=accept-new -o BatchMode=yes -T git@github.com 2>&1 \
-        | grep -q "successfully authenticated"
+    unlock_ssh
+    _out="$(ssh -o StrictHostKeyChecking=accept-new -o BatchMode=yes -T git@github.com 2>&1 || true)"
+    if _ssh_github_hi "$_out"; then
+        return 0
+    fi
+    _out="$(ssh -o StrictHostKeyChecking=accept-new -o BatchMode=yes -p 443 -T git@ssh.github.com 2>&1 || true)"
+    _ssh_github_hi "$_out"
 }
 
 ensure_ssh_key() {
@@ -185,56 +201,71 @@ else
     fi
 fi
 
-if github_ssh_ok; then
-    ui_ok "GitHub SSH already works — skipping the Bitwarden sign-in pause"
+if github_ssh_ok || [ -d "$DOTFILES_DIR/.git" ]; then
+    ui_ok "GitHub already set up — skipping the Bitwarden sign-in pause"
 elif app_ok Bitwarden; then
-    open -a Bitwarden 2>/dev/null || true
-    ui_ask \
-        "Sign in to Bitwarden, then enable its Safari extension." \
-        "Safari → Settings → Extensions → Bitwarden" || ui_info "skipped"
+    if ui_ask \
+        "Sign in to Bitwarden, then enable its Safari extension (needed only if we open GitHub next)." \
+        "Safari → Settings → Extensions → Bitwarden"; then
+        open -a Bitwarden 2>/dev/null || true
+    else
+        ui_info "skipped"
+    fi
 else
-    ui_info "Bitwarden isn't available — GitHub login will be manual"
+    ui_info "Bitwarden isn't available — GitHub login will be manual if needed"
 fi
 
 ui_step "GitHub SSH"
 if github_ssh_ok; then
     ui_ok "already authenticated"
+elif [ -d "$DOTFILES_DIR/.git" ]; then
+    ui_ok "repo is already on disk — skipping GitHub login"
+    ui_note "SSH didn't confirm in this check; that's fine if you already added a key"
 else
-    ensure_ssh_key
-    if gh_logged_in; then
-        ui_info "gh is already logged in — uploading this machine's key"
-        _title="$(hostname -s 2>/dev/null || echo mac)-$(date +%Y-%m-%d)"
-        if gh ssh-key add "$HOME/.ssh/id_ed25519.pub" --title "$_title" 2>/dev/null; then
-            ui_ok "uploaded  $_title"
-        else
-            ui_info "key may already be on GitHub — that's fine"
-        fi
+    if ! ui_ask \
+        "This Mac isn't authenticated to GitHub over SSH yet. Open Safari to log in?" \
+        "skip if you already uploaded a key — we'll try clone anyway"; then
+        ui_info "skipped — not opening GitHub"
     else
-        ui_info "opening Safari for GitHub login (Bitwarden can fill it)"
-        BROWSER=safari gh auth login \
-            --hostname github.com \
-            --git-protocol ssh \
-            --web \
-            --scopes admin:public_key || ui_warn "gh login didn't finish — trying the manual fallback"
+        ensure_ssh_key
+        if gh_logged_in; then
+            ui_info "gh is already logged in — uploading this machine's key"
+            _title="$(hostname -s 2>/dev/null || echo mac)-$(date +%Y-%m-%d)"
+            if gh ssh-key add "$HOME/.ssh/id_ed25519.pub" --title "$_title" 2>/dev/null; then
+                ui_ok "uploaded  $_title"
+            else
+                ui_info "key may already be on GitHub — that's fine"
+            fi
+        else
+            ui_info "opening Safari for GitHub login (Bitwarden can fill it)"
+            BROWSER=safari gh auth login \
+                --hostname github.com \
+                --git-protocol ssh \
+                --web \
+                --scopes admin:public_key || ui_warn "gh login didn't finish"
+        fi
+
+        if ! github_ssh_ok; then
+            ensure_ssh_key
+            pbcopy < "$HOME/.ssh/id_ed25519.pub" 2>/dev/null || true
+            ui_warn "SSH still isn't confirmed"
+            ui_note "public key copied to the clipboard"
+            ui_note "$(cat "$HOME/.ssh/id_ed25519.pub")"
+            if ui_ask "Open the GitHub SSH key form in Safari?"; then
+                open -a Safari "https://github.com/settings/ssh/new" 2>/dev/null || \
+                    open "https://github.com/settings/ssh/new" 2>/dev/null || true
+                ui_ask "Paste the key, save, then come back." || true
+            else
+                ui_info "skipped — not opening GitHub"
+            fi
+        fi
     fi
 
     if github_ssh_ok; then
         ui_ok "authenticated"
     else
-        ensure_ssh_key
-        pbcopy < "$HOME/.ssh/id_ed25519.pub" 2>/dev/null || true
-        ui_warn "SSH still isn't working"
-        ui_note "public key copied to the clipboard"
-        ui_note "$(cat "$HOME/.ssh/id_ed25519.pub")"
-        open -a Safari "https://github.com/settings/ssh/new" 2>/dev/null || \
-            open "https://github.com/settings/ssh/new" 2>/dev/null || true
-        ui_ask "Paste the key on the GitHub form, save, then come back." || true
-        if github_ssh_ok; then
-            ui_ok "authenticated"
-        else
-            ui_warn "GitHub SSH still failed — clone will be skipped if it needs auth"
-            ui_note "add the key at https://github.com/settings/keys and re-run"
-        fi
+        ui_warn "GitHub SSH still not confirmed — clone will try anyway"
+        ui_note "if it fails, add the key at https://github.com/settings/keys and re-run"
     fi
 fi
 
@@ -251,17 +282,12 @@ elif [ -d "$DOTFILES_DIR" ]; then
     fi
 else
     mkdir -p "$HOME/Developer"
-    if github_ssh_ok; then
-        ui_info "cloning over SSH"
-        if git clone "$REPO_SSH" "$DOTFILES_DIR"; then
-            ui_ok "cloned  $DOTFILES_DIR"
-        else
-            ui_fail "clone failed"
-            exit 1
-        fi
+    ui_info "cloning over SSH"
+    if git clone "$REPO_SSH" "$DOTFILES_DIR"; then
+        ui_ok "cloned  $DOTFILES_DIR"
     else
-        ui_fail "can't clone without GitHub SSH"
-        ui_note "fix auth, then re-run — this script will skip finished steps"
+        ui_fail "clone failed"
+        ui_note "add a key at https://github.com/settings/keys and re-run"
         exit 1
     fi
 fi
