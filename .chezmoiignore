@@ -1,6 +1,7 @@
 README.md
 bootstrap.sh
 install.sh
+ui.sh
 Brewfile
 aliases
 functions
