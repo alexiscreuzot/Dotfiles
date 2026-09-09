@@ -48,20 +48,29 @@ ui_note() {
 
 ui_ask() {
     _prompt="$1"
+    _note="${2:-}"
+    _opt1="${3:-Continue}"
+    _opt2="${4:-Skip}"
     printf '\n       %s?%s  %s\n' "$C_CYAN" "$C_RESET" "$_prompt"
-    if [ -n "${2:-}" ]; then
-        ui_note "$2"
+    if [ -n "$_note" ]; then
+        ui_note "$_note"
     fi
+    printf '\n'
+    printf '          %s1%s  %s\n' "$C_BOLD" "$C_RESET" "$_opt1"
+    printf '          %s2%s  %s\n' "$C_BOLD" "$C_RESET" "$_opt2"
     if [ ! -t 0 ]; then
-        ui_info "no tty — continuing"
+        ui_info "no tty — choosing 1"
         return 0
     fi
-    printf '          %sEnter to continue · s to skip%s  ' "$C_DIM" "$C_RESET"
-    read -r _reply || _reply=""
-    case "$_reply" in
-        [sSnN]*) return 1 ;;
-        *)       return 0 ;;
-    esac
+    while true; do
+        printf '          %sChoice [1]%s  ' "$C_DIM" "$C_RESET"
+        read -r _reply || _reply=""
+        case "$_reply" in
+            ""|1) return 0 ;;
+            2)    return 1 ;;
+            *)    ui_note "type 1 or 2" ;;
+        esac
+    done
 }
 
 # --- helpers ---
@@ -159,7 +168,8 @@ if xcode-select -p >/dev/null 2>&1; then
 else
     ui_info "opening the installer"
     xcode-select --install || true
-    ui_ask "Wait until the Command Line Tools installer finishes." || true
+    ui_ask "Wait until the Command Line Tools installer finishes." "" \
+        "It's finished" "Skip" || true
     if xcode-select -p >/dev/null 2>&1; then
         ui_ok "installed  $(xcode-select -p)"
     else
@@ -206,7 +216,8 @@ if github_ssh_ok || [ -d "$DOTFILES_DIR/.git" ]; then
 elif app_ok Bitwarden; then
     if ui_ask \
         "Sign in to Bitwarden, then enable its Safari extension (needed only if we open GitHub next)." \
-        "Safari → Settings → Extensions → Bitwarden"; then
+        "Safari → Settings → Extensions → Bitwarden" \
+        "Open Bitwarden" "Skip"; then
         open -a Bitwarden 2>/dev/null || true
     else
         ui_info "skipped"
@@ -223,8 +234,9 @@ elif [ -d "$DOTFILES_DIR/.git" ]; then
     ui_note "SSH didn't confirm in this check; that's fine if you already added a key"
 else
     if ! ui_ask \
-        "This Mac isn't authenticated to GitHub over SSH yet. Open Safari to log in?" \
-        "skip if you already uploaded a key — we'll try clone anyway"; then
+        "This Mac isn't authenticated to GitHub over SSH yet." \
+        "" \
+        "Open Safari to log in" "Skip — I already have a key"; then
         ui_info "skipped — not opening GitHub"
     else
         ensure_ssh_key
@@ -251,10 +263,12 @@ else
             ui_warn "SSH still isn't confirmed"
             ui_note "public key copied to the clipboard"
             ui_note "$(cat "$HOME/.ssh/id_ed25519.pub")"
-            if ui_ask "Open the GitHub SSH key form in Safari?"; then
+            if ui_ask "Open the GitHub SSH key form in Safari?" "" \
+                "Open Safari" "Skip"; then
                 open -a Safari "https://github.com/settings/ssh/new" 2>/dev/null || \
                     open "https://github.com/settings/ssh/new" 2>/dev/null || true
-                ui_ask "Paste the key, save, then come back." || true
+                ui_ask "Paste the key, save, then come back." "" \
+                    "It's saved" "Skip" || true
             else
                 ui_info "skipped — not opening GitHub"
             fi

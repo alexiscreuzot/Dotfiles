@@ -40,24 +40,33 @@ ui_note() {
     printf '          %s%s%s\n' "$C_DIM" "$1" "$C_RESET"
 }
 
-# Prompt on a tty. Returns 0 on continue / yes, 1 on skip / no.
-# Default is continue (Enter). "s" or "n" skips.
+# Prompt with a 1 / 2 selection. Returns 0 for option 1, 1 for option 2.
+# Usage: ui_ask "question" ["note"] ["option 1"] ["option 2"]
 ui_ask() {
     _prompt="$1"
+    _note="${2:-}"
+    _opt1="${3:-Continue}"
+    _opt2="${4:-Skip}"
     printf '\n       %s?%s  %s\n' "$C_CYAN" "$C_RESET" "$_prompt"
-    if [ -n "${2:-}" ]; then
-        ui_note "$2"
+    if [ -n "$_note" ]; then
+        ui_note "$_note"
     fi
+    printf '\n'
+    printf '          %s1%s  %s\n' "$C_BOLD" "$C_RESET" "$_opt1"
+    printf '          %s2%s  %s\n' "$C_BOLD" "$C_RESET" "$_opt2"
     if [ ! -t 0 ]; then
-        ui_info "no tty — continuing"
+        ui_info "no tty — choosing 1"
         return 0
     fi
-    printf '          %sEnter to continue · s to skip%s  ' "$C_DIM" "$C_RESET"
-    read -r _reply || _reply=""
-    case "$_reply" in
-        [sSnN]*) return 1 ;;
-        *)       return 0 ;;
-    esac
+    while true; do
+        printf '          %sChoice [1]%s  ' "$C_DIM" "$C_RESET"
+        read -r _reply || _reply=""
+        case "$_reply" in
+            ""|1) return 0 ;;
+            2)    return 1 ;;
+            *)    ui_note "type 1 or 2" ;;
+        esac
+    done
 }
 
 ui_done() {

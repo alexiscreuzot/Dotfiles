@@ -57,7 +57,8 @@ else
     ui_info "encrypted secrets need your age key from Bitwarden"
     ui_note "item looks like AGE-SECRET-KEY-..."
     ui_note "paste it into  $_key"
-    if ui_ask "Have you saved the age key into that file?"; then
+    if ui_ask "Have you saved the age key into that file?" "" \
+        "It's saved" "Skip for now"; then
         if [ -s "$_key" ]; then
             chmod 600 "$_key"
             ui_ok "key is in place"
