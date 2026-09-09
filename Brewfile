@@ -9,21 +9,15 @@ brew "ripgrep"
 brew "jq"
 brew "gh"
 brew "tmux"
-brew "universal-ctags"
-brew "whois"
 brew "watchman"
-brew "aria2"
 
 # Version managers & languages
 brew "asdf"
-brew "rbenv"
-brew "pyenv"
 brew "node"
 brew "yarn"
 brew "uv"
 
 # Databases
-brew "postgresql@15"
 brew "postgresql@16"
 
 # Media & docs
@@ -37,7 +31,6 @@ brew "swiftformat"
 brew "swiftlint"
 brew "xcodegen"
 brew "periphery"
-brew "sourcekitten"
 
 # Local AI
 brew "hf"
@@ -63,7 +56,6 @@ cask "sublime-text"
 # Casks — utilities
 cask "imageoptim"
 cask "keka"
-cask "tomatobar"
 cask "proxy-audio-device"
 cask "basictex"
 cask "prince"
@@ -72,7 +64,6 @@ cask "prince"
 cask "bitwarden"
 cask "iina"
 cask "arc"
-cask "iterm2"
 cask "raycast"
 cask "rectangle"
 cask "slack"

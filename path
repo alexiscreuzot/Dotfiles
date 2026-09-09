@@ -2,37 +2,13 @@
 #   ------------------------------------------------------------
 # System paths (make sure these are first to avoid overriding system binaries)
 export PATH="/usr/bin:/bin:/usr/sbin:/sbin"
-# Add rbenv and pyenv paths
 export PATH="/opt/homebrew/bin:$PATH"
-export PATH="$HOME/.rbenv/bin:$HOME/.pyenv/bin:$PATH"
 export MLX_LOCAL_API_KEY=local
-# Add other custom paths
 export PATH="/usr/local/bin:/usr/local/sbin:/usr/local/git/bin:/usr/local/share/npm/bin:/opt/local/bin:/opt/local/sbin:$PATH"
 
 # Load secrets — keep this file out of git
 [ -f "$HOME/.secrets" ] && source "$HOME/.secrets"
 
-# Initialize rbenv
-if command -v rbenv 1>/dev/null 2>&1; then
-  eval "$(rbenv init -)"
-fi
-# Initialize pyenv
-if command -v pyenv 1>/dev/null 2>&1; then
-  eval "$(pyenv init --path)"
-  eval "$(pyenv init -)"
-  # Function to update PATH for active Python version
-  update_python_path() {
-    local py_version
-    py_version=$(pyenv version-name)
-    export PATH="$HOME/.pyenv/versions/$py_version/bin:$PATH"
-  }
-  # Ensure the function is called on startup
-  update_python_path
-  # Add hook to pyenv commands
-  export PYENV_HOOK_PATH="$HOME/.pyenv/hooks"
-  mkdir -p "$PYENV_HOOK_PATH"
-  echo 'update_python_path' > "$PYENV_HOOK_PATH/after-switch"
-fi
 # Homebrew configuration
 if [ -f /opt/homebrew/bin/brew ]; then
   eval "$(/opt/homebrew/bin/brew shellenv)"
