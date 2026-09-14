@@ -1,9 +1,0 @@
-{
-	"ignored_packages":
-	[
-		"Vintage",
-	],
-	"theme": "auto",
-	"color_scheme": "auto",
-	"index_files": true,
-}

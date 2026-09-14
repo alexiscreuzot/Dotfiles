@@ -24,9 +24,7 @@ alias bef="bundle exec fastlane"
 alias serve="bundle exec jekyll serve"
 
 # Editors
-alias sm='subl'
-alias vs='open -a "Visual Studio Code"'
-code () { VSCODE_CWD="$PWD" open -n -b "com.microsoft.VSCode" --args $* ;}
+alias sm='zed'
 
 # IP addresses
 alias ip="dig +short myip.opendns.com @resolver1.opendns.com"

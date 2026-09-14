@@ -57,9 +57,7 @@ cask "neohtop"
 
 # Casks — editors
 cask "zed"
-cask "visual-studio-code"
 cask "cursor"
-cask "sublime-text"
 
 # Casks — utilities
 cask "imageoptim"
@@ -90,19 +88,3 @@ cask "github"
 cask "numi"
 cask "obs"
 cask "nordvpn"
-
-# VS Code extensions
-vscode "esbenp.prettier-vscode"
-vscode "github.vscode-github-actions"
-vscode "llvm-vs-code-extensions.lldb-dap"
-vscode "mechatroner.rainbow-csv"
-vscode "michaelcurrin.auto-commit-msg"
-vscode "ms-python.debugpy"
-vscode "ms-python.python"
-vscode "ms-python.vscode-pylance"
-vscode "ms-python.vscode-python-envs"
-vscode "ms-vscode.live-server"
-vscode "redhat.vscode-yaml"
-vscode "shd101wyy.markdown-preview-enhanced"
-vscode "swiftlang.swift-vscode"
-vscode "vue.volar"

@@ -34,10 +34,8 @@ dot_config/zed/                        ~/.config/zed/
 dot_cursor/rules · skills · commands   ~/.cursor/  (agent rules and skills)
 dot_cursor/encrypted_..._mcp.json.age  ~/.cursor/mcp.json  (encrypted)
 private_Library/.../Cursor/            Cursor settings
-private_Library/.../Code/              VS Code settings
-private_Library/.../Sublime Text/      Sublime settings
 path · aliases · functions             sourced from ~/.zshrc
-Brewfile                               formulae, casks, extensions
+Brewfile                               formulae, casks
 ```
 
 Scripts that run as part of `chezmoi apply`:
@@ -94,6 +92,7 @@ Then commit and push — ordinary git. Brewfile and macOS-defaults changes re-ru
 | `xcclean` | Delete DerivedData, after confirming how much it frees |
 | `sim` | Pick an iOS simulator with the arrow keys and boot it |
 | `ai` | MLX model server plus Open WebUI, with a model picker |
+| `zed` / `sm` | Open a file in Zed (`zed --wait` for git and chezmoi) |
 
 ---
 
@@ -113,4 +112,4 @@ SSH **keys** are not in this repo. `install.sh` has `gh` generate `id_ed25519` a
 ## Notes
 
 - Apps that were installed outside Homebrew before this setup will warn on `brew bundle`. Adopt them with `brew install --cask --force <name>` (quit the app first).
-- Sublime settings are managed (theme and color scheme Auto, following macOS). Package Control itself is installed once from the Command Palette on first launch.
+- Zed is the default handler for Finder text files. The Homebrew cask puts `zed` on PATH.

@@ -116,7 +116,7 @@ PY
     rm -f "$_dock_plist"
 fi
 
-# --- Default apps: Arc, IINA, Spark, Keka, Sublime Text ---
+# --- Default apps: Arc, IINA, Spark, Keka, Zed ---
 python3 - <<'PY'
 import ctypes
 import ctypes.util
@@ -211,8 +211,8 @@ if Path("/Applications/Keka.app").is_dir():
     ):
         set_ext(bundle, ext)
 
-if Path("/Applications/Sublime Text.app").is_dir():
-    bundle = "com.sublimetext.4"
+if Path("/Applications/Zed.app").is_dir():
+    bundle = "dev.zed.Zed"
     for uti in (
         "public.plain-text",
         "public.utf8-plain-text",

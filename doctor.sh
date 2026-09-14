@@ -378,33 +378,8 @@ EOF
 $(brewfile_kind cask)
 EOF
 
-    _ok_v="" _miss_v=""
-    _code_bin=""
-    if command -v code >/dev/null 2>&1; then
-        _code_bin="$(command -v code)"
-    elif [ -x "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code" ]; then
-        _code_bin="/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code"
-    fi
-    if [ -n "$_code_bin" ]; then
-        _inst_v="$("$_code_bin" --list-extensions 2>/dev/null | tr '[:upper:]' '[:lower:]')"
-        while IFS= read -r _p; do
-            [ -n "$_p" ] || continue
-            _pl="$(printf '%s' "$_p" | tr '[:upper:]' '[:lower:]')"
-            if have_pkg "$_pl" "$_inst_v"; then
-                _ok_v="${_ok_v}${_p} "
-            else
-                _miss_v="${_miss_v}${_p} "
-            fi
-        done <<EOF
-$(brewfile_kind vscode)
-EOF
-    elif [ -n "$(brewfile_kind vscode)" ]; then
-        ui_info "vscode  code CLI not found"
-    fi
-
     ok_names "brew" "$(printf '%s' "$_ok_f" | as_line)"
     ok_names "cask" "$(printf '%s' "$_ok_c" | as_line)"
-    ok_names "vscode" "$(printf '%s' "$_ok_v" | as_line)"
 
     _miss_any=0
     if [ -n "$_miss_f" ]; then
@@ -413,10 +388,6 @@ EOF
     fi
     if [ -n "$_miss_c" ]; then
         warn_names "cask  missing" "$(printf '%s' "$_miss_c" | as_line)"
-        _miss_any=1
-    fi
-    if [ -n "$_miss_v" ]; then
-        warn_names "vscode  missing" "$(printf '%s' "$_miss_v" | as_line)"
         _miss_any=1
     fi
     if [ "$_miss_any" -eq 1 ]; then
