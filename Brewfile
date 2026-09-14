@@ -74,11 +74,12 @@ cask "apparency"
 cask "swift-quit"
 
 # Casks — apps
+tap "shobhit99/tap"
 cask "bitwarden"
 cask "readdle-spark"
 cask "iina"
 cask "arc"
-cask "sol"
+cask "shobhit99/tap/supercmd"
 cask "rectangle"
 cask "slack"
 cask "zoom"
