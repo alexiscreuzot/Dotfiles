@@ -233,7 +233,7 @@ if Path("/Applications/Sublime Text.app").is_dir():
         set_ext(bundle, ext)
 PY
 
-# --- Raycast takes Cmd+Space from Spotlight ---
+# --- Sol takes Cmd+Space from Spotlight ---
 # 64 = Show Spotlight search, 65 = Show Finder search window.
 defaults write com.apple.symbolichotkeys AppleSymbolicHotKeys \
     -dict-add 64 '<dict><key>enabled</key><false/></dict>'
@@ -243,8 +243,34 @@ _activate_settings="/System/Library/PrivateFrameworks/SystemAdministration.frame
 if [ -x "$_activate_settings" ]; then
     "$_activate_settings" -u
 fi
-if [ -d "/Applications/Raycast.app" ]; then
-    defaults write com.raycast.macos raycastGlobalHotkey -string "Command-49"
+if [ -d "/Applications/Sol.app" ]; then
+    mkdir -p "$HOME/.config/sol"
+    python3 - "$HOME/.config/sol/config.json" <<'PY'
+import json
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+data = {}
+if path.exists():
+    try:
+        loaded = json.loads(path.read_text())
+        if isinstance(loaded, dict):
+            data = loaded
+    except json.JSONDecodeError:
+        pass
+data["globalShortcut"] = "command"
+data["launchAtLogin"] = True
+data["hasDismissedGettingStarted"] = True
+path.write_text(json.dumps(data, indent=2) + "\n")
+PY
+    if [ -d "/Applications/Raycast.app" ]; then
+        defaults delete com.raycast.macos raycastGlobalHotkey 2>/dev/null || true
+        osascript -e 'tell application "Raycast" to quit' 2>/dev/null || true
+    fi
+    if ! pgrep -f "/Applications/Sol.app" >/dev/null 2>&1; then
+        open -gj -a Sol 2>/dev/null || true
+    fi
 fi
 
 # --- Network volumes: no .DS_Store litter ---
@@ -273,7 +299,7 @@ if [ -d "/Applications/Swift Quit.app" ]; then
         "/Applications/NordVPN.app" \
         "/Applications/Bitwarden.app" \
         "/Applications/Rectangle.app" \
-        "/Applications/Raycast.app" \
+        "/Applications/Sol.app" \
         "/Applications/Loopback.app" \
         "/Applications/zoom.us.app" \
         "/Applications/Docker.app"
