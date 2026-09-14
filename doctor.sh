@@ -46,6 +46,66 @@ bad() {
     if [ -n "${2:-}" ]; then ui_note "$2"; fi
 }
 
+# Labelled name list, wrapping onto dim continuation lines.
+emit_names() {
+    _fn="$1"
+    _label="$2"
+    _body="${3:-}"
+    [ -n "$_body" ] || return
+    _text="$_label  $_body"
+    _folded="$(printf '%s\n' "$_text" | fold -s -w 68)"
+    _first=1
+    while IFS= read -r _line; do
+        _line="${_line%"${_line##*[![:space:]]}"}"
+        [ -n "$_line" ] || continue
+        if [ "$_first" -eq 1 ]; then
+            "$_fn" "$_line"
+            _first=0
+        else
+            ui_note "$_line"
+        fi
+    done <<EOF
+$_folded
+EOF
+}
+
+ok_names() { emit_names ok "$1" "${2:-}"; }
+warn_names() { emit_names warn "$1" "${2:-}"; }
+
+# Space-or-newline names -> sorted unique single line.
+as_line() {
+    tr -s '[:space:]' '\n' | grep -v '^$' | sort -u | paste -sd ' ' -
+}
+
+# Exact match in a newline-separated list, then basename (tap/name).
+have_pkg() {
+    _n="$1"
+    _hay="$2"
+    case $'\n'"$_hay"$'\n' in
+        *$'\n'"$_n"$'\n'*) return 0 ;;
+    esac
+    _s="${_n##*/}"
+    if [ "$_s" != "$_n" ]; then
+        case $'\n'"$_hay"$'\n' in
+            *$'\n'"$_s"$'\n'*) return 0 ;;
+        esac
+    fi
+    return 1
+}
+
+# Quoted tokens from the Brewfile (`brew "foo"`, `cask "tap/bar"`).
+brewfile_kind() {
+    awk -v kind="$1" '
+        $1 == kind {
+            name = $2
+            gsub(/"/, "", name)
+            sub(/,.*/, "", name)
+            n = split(name, a, "/")
+            print a[n]
+        }
+    ' "$DOTFILES_DIR/Brewfile"
+}
+
 printf '\n'
 printf '  %sdotfiles doctor%s\n' "$C_BOLD" "$C_RESET"
 printf '  %ssays what is off · fixes nothing%s\n' "$C_DIM" "$C_RESET"
@@ -55,9 +115,9 @@ printf '  %ssays what is off · fixes nothing%s\n' "$C_DIM" "$C_RESET"
 ui_section "Tooling"
 
 if xcode-select -p >/dev/null 2>&1; then
-    ok "Xcode command line tools  $(xcode-select -p)"
+    ok "Xcode CLT  $(xcode-select -p)"
 else
-    bad "Xcode command line tools are missing" "xcode-select --install"
+    bad "Xcode CLT is missing" "xcode-select --install"
 fi
 
 if command -v brew >/dev/null 2>&1; then
@@ -65,18 +125,6 @@ if command -v brew >/dev/null 2>&1; then
 else
     bad "Homebrew is missing" "run install.sh"
 fi
-
-# command:formula, because a few commands are named differently than the formula
-for _entry in git:git gh:gh chezmoi:chezmoi age:age jq:jq fd:fd rg:ripgrep \
-              fzf:fzf zoxide:zoxide eza:eza bat:bat asdf:asdf; do
-    _cmd="${_entry%%:*}"
-    _formula="${_entry##*:}"
-    if command -v "$_cmd" >/dev/null 2>&1; then
-        ok "$_cmd"
-    else
-        warn "$_cmd is missing" "brew install $_formula"
-    fi
-done
 
 # ----------------------------------------------------------------- GitHub ---
 
@@ -105,7 +153,7 @@ _age_key="$HOME/.config/chezmoi/key.txt"
 if [ -s "$_age_key" ]; then
     _perm="$(stat -f '%Lp' "$_age_key" 2>/dev/null)"
     if [ "$_perm" = "600" ]; then
-        ok "age key  $_age_key"
+        ok "age key  ~/.config/chezmoi/key.txt"
     else
         warn "age key is mode ${_perm:-unknown}" "chmod 600 $_age_key"
     fi
@@ -116,7 +164,7 @@ fi
 if command -v chezmoi >/dev/null 2>&1; then
     _status="$(chezmoi status --source "$DOTFILES_DIR" 2>/dev/null)"
     if [ -z "$_status" ]; then
-        ok "chezmoi  everything applied"
+        ok "chezmoi  applied"
     else
         warn "chezmoi is out of sync" "chezmoi diff --source $DOTFILES_DIR  ·  chezmoi apply --source $DOTFILES_DIR"
         printf '%s\n' "$_status" | head -10 | while read -r _line; do
@@ -126,9 +174,9 @@ if command -v chezmoi >/dev/null 2>&1; then
 fi
 
 if [ -n "$(git -C "$DOTFILES_DIR" status --porcelain 2>/dev/null)" ]; then
-    warn "the dotfiles repo has uncommitted changes" "git -C $DOTFILES_DIR status"
+    warn "dotfiles repo has uncommitted changes" "git -C $DOTFILES_DIR status"
 else
-    ok "dotfiles repo  clean"
+    ok "repo  clean"
 fi
 
 _ahead="$(git -C "$DOTFILES_DIR" rev-list --count '@{u}..HEAD' 2>/dev/null || echo 0)"
@@ -140,30 +188,31 @@ fi
 
 ui_section "Cursor"
 
+_cursor_ok=""
 if [ -d "/Applications/Cursor.app" ]; then
-    ok "Cursor.app"
+    _cursor_ok="Cursor.app"
 else
     bad "Cursor.app is missing" "brew install --cask cursor"
 fi
 
 _cursor_settings="$HOME/Library/Application Support/Cursor/User/settings.json"
 if [ -f "$_cursor_settings" ]; then
-    ok "settings"
+    if [ -n "$_cursor_ok" ]; then
+        _cursor_ok="$_cursor_ok · settings"
+    else
+        _cursor_ok="settings"
+    fi
 else
     warn "Cursor settings are missing" "chezmoi apply --source $DOTFILES_DIR"
 fi
+[ -n "$_cursor_ok" ] && ok "$_cursor_ok"
 
 _mcp="$HOME/.cursor/mcp.json"
 if [ -s "$_mcp" ]; then
     if command -v jq >/dev/null 2>&1; then
-        _servers="$(jq -r '.mcpServers // {} | keys[]' "$_mcp" 2>/dev/null)"
+        _servers="$(jq -r '.mcpServers // {} | keys[]' "$_mcp" 2>/dev/null | sort | paste -sd ' ' -)"
         if [ -n "$_servers" ]; then
-            while IFS= read -r _srv; do
-                [ -n "$_srv" ] || continue
-                ok "mcp  $_srv"
-            done <<EOF
-$_servers
-EOF
+            ok_names "mcp" "$_servers"
         else
             warn "mcp.json has no servers"
         fi
@@ -176,74 +225,87 @@ fi
 
 _cursor_src="$DOTFILES_DIR/dot_cursor"
 
+_ok_cmds=""
 if [ -d "$_cursor_src/commands" ]; then
     for _src in "$_cursor_src/commands"/*.md; do
         [ -f "$_src" ] || continue
         _name="$(basename "$_src" .md)"
         if [ -f "$HOME/.cursor/commands/${_name}.md" ]; then
-            ok "/$_name"
+            _ok_cmds="${_ok_cmds}${_name} "
         else
             bad "/$_name  not applied" \
                 "chezmoi apply --source $DOTFILES_DIR $HOME/.cursor/commands/${_name}.md"
         fi
     done
 fi
+[ -n "$_ok_cmds" ] && ok_names "commands" "$(printf '%s' "$_ok_cmds" | as_line)"
 
+_ok_skills=""
 if [ -d "$_cursor_src/skills" ]; then
     for _src in "$_cursor_src/skills"/*/SKILL.md; do
         [ -f "$_src" ] || continue
         _name="$(basename "$(dirname "$_src")")"
         if [ -f "$HOME/.cursor/skills/${_name}/SKILL.md" ]; then
-            ok "skill  $_name"
+            _ok_skills="${_ok_skills}${_name} "
         else
             bad "skill  $_name  not applied" \
                 "chezmoi apply --source $DOTFILES_DIR $HOME/.cursor/skills/${_name}/SKILL.md"
         fi
     done
 fi
+[ -n "$_ok_skills" ] && ok_names "skills" "$(printf '%s' "$_ok_skills" | as_line)"
 
+_ok_rules=""
 if [ -d "$_cursor_src/rules" ]; then
     for _src in "$_cursor_src/rules"/*.mdc; do
         [ -f "$_src" ] || continue
-        _name="$(basename "$_src")"
-        if [ -f "$HOME/.cursor/rules/$_name" ]; then
-            ok "rule  ${_name%.mdc}"
+        _name="$(basename "$_src" .mdc)"
+        if [ -f "$HOME/.cursor/rules/${_name}.mdc" ]; then
+            _ok_rules="${_ok_rules}${_name} "
         else
-            bad "rule  ${_name%.mdc}  not applied" \
-                "chezmoi apply --source $DOTFILES_DIR $HOME/.cursor/rules/$_name"
+            bad "rule  $_name  not applied" \
+                "chezmoi apply --source $DOTFILES_DIR $HOME/.cursor/rules/${_name}.mdc"
         fi
     done
 fi
+[ -n "$_ok_rules" ] && ok_names "rules" "$(printf '%s' "$_ok_rules" | as_line)"
 
+_extra_cmds=""
 if [ -d "$HOME/.cursor/commands" ]; then
     for _live in "$HOME/.cursor/commands"/*.md; do
         [ -f "$_live" ] || continue
         _name="$(basename "$_live")"
         if [ ! -f "$_cursor_src/commands/$_name" ]; then
-            warn "/${_name%.md}  only on this machine" "chezmoi add $HOME/.cursor/commands/$_name"
+            _extra_cmds="${_extra_cmds}${_name%.md} "
         fi
     done
 fi
+if [ -n "$_extra_cmds" ]; then
+    warn_names "commands only on this machine" "$(printf '%s' "$_extra_cmds" | as_line)"
+    ui_note "chezmoi add $HOME/.cursor/commands/<name>.md"
+fi
 
 _mh="$HOME/.cursor/monthly-hours"
+_mh_ok=""
 if [ -f "$_mh/report.py" ] && [ -f "$_mh/invoice.py" ]; then
-    ok "monthly-hours scripts"
+    _mh_ok="scripts"
 else
     bad "monthly-hours scripts are missing" \
         "chezmoi apply --source $DOTFILES_DIR $_mh"
 fi
 if [ -s "$_mh/config.json" ]; then
-    ok "monthly-hours config"
+    if [ -n "$_mh_ok" ]; then _mh_ok="$_mh_ok · config"; else _mh_ok="config"; fi
 else
     bad "monthly-hours config.json is missing" \
         "need the age key, then chezmoi apply --source $DOTFILES_DIR"
 fi
 if [ -x "$_mh/.venv/bin/python" ]; then
-    ok "monthly-hours venv"
+    if [ -n "$_mh_ok" ]; then _mh_ok="$_mh_ok · venv"; else _mh_ok="venv"; fi
 else
     warn "monthly-hours venv is missing" \
          "chezmoi apply — the apply hook creates $_mh/.venv"
 fi
+[ -n "$_mh_ok" ] && ok "monthly-hours  $_mh_ok"
 
 # ------------------------------------------------------------------ Shell ---
 
@@ -256,49 +318,109 @@ case "$_login_shell" in
 esac
 
 if [ -f "$HOME/.zshrc" ]; then
-    ok "~/.zshrc  present"
+    ok "~/.zshrc"
 else
     bad "~/.zshrc is missing" "chezmoi apply --source $DOTFILES_DIR ~/.zshrc"
 fi
 
+_prompt=""
 if [ -f "$HOME/.oh-my-zsh/oh-my-zsh.sh" ]; then
-    ok "oh-my-zsh  installed"
+    _prompt="oh-my-zsh"
 else
     warn "oh-my-zsh is not installed" "bash $DOTFILES_DIR/run_once_after_20-oh-my-zsh.sh"
 fi
 
 _theme="$HOME/.oh-my-zsh/custom/themes/spaceship.zsh-theme"
 if [ -f "$_theme" ]; then
-    ok "Spaceship theme  linked"
+    if [ -n "$_prompt" ]; then _prompt="$_prompt · Spaceship"; else _prompt="Spaceship"; fi
 else
     warn "Spaceship theme is not linked" "bash $DOTFILES_DIR/run_once_after_20-oh-my-zsh.sh"
 fi
 
 for _plugin in zsh-autosuggestions zsh-syntax-highlighting; do
     if [ -f "${HOMEBREW_PREFIX:-/opt/homebrew}/share/$_plugin/$_plugin.zsh" ]; then
-        ok "$_plugin  loaded"
+        if [ -n "$_prompt" ]; then _prompt="$_prompt · $_plugin"; else _prompt="$_plugin"; fi
     else
         warn "$_plugin is missing" "brew install $_plugin"
     fi
 done
+[ -n "$_prompt" ] && ok "$_prompt"
 
 # --------------------------------------------------------------- Packages ---
 
 ui_section "Packages"
 
 if command -v brew >/dev/null 2>&1; then
-    _bundle="$(brew bundle check --verbose --file="$DOTFILES_DIR/Brewfile" 2>&1)"
-    _bundle_rc=$?
-    if [ "$_bundle_rc" -eq 0 ]; then
-        ok "Brewfile  everything installed"
-    else
-        warn "the Brewfile has missing entries" \
-             "brew bundle install --file=$DOTFILES_DIR/Brewfile"
-        printf '%s\n' "$_bundle" \
-            | grep -iE 'needs to be installed|not installed' | head -15 \
-            | while read -r _line; do
-                [ -n "$_line" ] && ui_note "$_line"
-            done
+    _inst_f="$(brew list --formula 2>/dev/null || true)"
+    _inst_c="$(brew list --cask 2>/dev/null || true)"
+
+    _ok_f="" _miss_f=""
+    while IFS= read -r _p; do
+        [ -n "$_p" ] || continue
+        if have_pkg "$_p" "$_inst_f"; then
+            _ok_f="${_ok_f}${_p} "
+        else
+            _miss_f="${_miss_f}${_p} "
+        fi
+    done <<EOF
+$(brewfile_kind brew)
+EOF
+
+    _ok_c="" _miss_c=""
+    while IFS= read -r _p; do
+        [ -n "$_p" ] || continue
+        if have_pkg "$_p" "$_inst_c"; then
+            _ok_c="${_ok_c}${_p} "
+        else
+            _miss_c="${_miss_c}${_p} "
+        fi
+    done <<EOF
+$(brewfile_kind cask)
+EOF
+
+    _ok_v="" _miss_v=""
+    _code_bin=""
+    if command -v code >/dev/null 2>&1; then
+        _code_bin="$(command -v code)"
+    elif [ -x "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code" ]; then
+        _code_bin="/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code"
+    fi
+    if [ -n "$_code_bin" ]; then
+        _inst_v="$("$_code_bin" --list-extensions 2>/dev/null | tr '[:upper:]' '[:lower:]')"
+        while IFS= read -r _p; do
+            [ -n "$_p" ] || continue
+            _pl="$(printf '%s' "$_p" | tr '[:upper:]' '[:lower:]')"
+            if have_pkg "$_pl" "$_inst_v"; then
+                _ok_v="${_ok_v}${_p} "
+            else
+                _miss_v="${_miss_v}${_p} "
+            fi
+        done <<EOF
+$(brewfile_kind vscode)
+EOF
+    elif [ -n "$(brewfile_kind vscode)" ]; then
+        ui_info "vscode  code CLI not found"
+    fi
+
+    ok_names "brew" "$(printf '%s' "$_ok_f" | as_line)"
+    ok_names "cask" "$(printf '%s' "$_ok_c" | as_line)"
+    ok_names "vscode" "$(printf '%s' "$_ok_v" | as_line)"
+
+    _miss_any=0
+    if [ -n "$_miss_f" ]; then
+        warn_names "brew  missing" "$(printf '%s' "$_miss_f" | as_line)"
+        _miss_any=1
+    fi
+    if [ -n "$_miss_c" ]; then
+        warn_names "cask  missing" "$(printf '%s' "$_miss_c" | as_line)"
+        _miss_any=1
+    fi
+    if [ -n "$_miss_v" ]; then
+        warn_names "vscode  missing" "$(printf '%s' "$_miss_v" | as_line)"
+        _miss_any=1
+    fi
+    if [ "$_miss_any" -eq 1 ]; then
+        ui_note "brew bundle install --file=$DOTFILES_DIR/Brewfile"
     fi
 fi
 
