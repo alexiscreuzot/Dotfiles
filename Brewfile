@@ -51,7 +51,7 @@ brew "spaceship"
 
 # Casks — dev tools
 cask "android-commandlinetools"
-cask "xcodes-app"
+# xcodes-app: Homebrew 4.1.0b40 404s (yanked). Restore when the cask is 4.1.1+.
 cask "ngrok"
 cask "neohtop"
 
