@@ -88,7 +88,6 @@ cask "github"
 cask "numi"
 cask "obs"
 cask "nordvpn"
-cask "loopback"
 
 # VS Code extensions
 vscode "esbenp.prettier-vscode"
