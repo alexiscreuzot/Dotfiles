@@ -63,7 +63,7 @@ cask "cursor"
 cask "imageoptim"
 cask "keka"
 cask "proxy-audio-device"
-tap "alexiscreuzot/echo", trusted: true
+tap "alexiscreuzot/echo", "https://github.com/alexiscreuzot/echo", trusted: true
 cask "alexiscreuzot/echo/echo"
 cask "basictex"
 cask "prince"

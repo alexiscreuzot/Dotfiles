@@ -43,6 +43,7 @@ Scripts that run as part of `chezmoi apply`:
 | When | Script | Does |
 | --- | --- | --- |
 | Brewfile changes | `run_onchange_before_10-brew-bundle.sh.tmpl` | `brew bundle` |
+| Every apply | `run_after_11-upgrade-echo.sh` | Pull the Echo tap and upgrade the cask |
 | First apply / script changes | `run_once_after_20-oh-my-zsh.sh` | Install oh-my-zsh and link the Spaceship theme |
 | Script changes | `run_onchange_after_30-macos-defaults.sh.tmpl` | Finder, keyboard, default apps, SuperCmd, screenshots, Dock pins |
 | requirements.txt changes | `run_onchange_after_40-monthly-hours-venv.sh.tmpl` | Invoice PDF venv (`reportlab`) |
