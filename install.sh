@@ -110,6 +110,40 @@ ui_ask() {
     done
 }
 
+# Prompt once, then refresh the sudo timestamp so pkg casks don't ask again.
+keep_sudo() {
+    if ! command -v sudo >/dev/null 2>&1 || [ "$(id -u)" -eq 0 ]; then
+        return 0
+    fi
+    if [ ! -r /dev/tty ] || [ ! -t 1 ]; then
+        ui_info "no tty — some installs may ask for a password later"
+        return 0
+    fi
+    if sudo -n true 2>/dev/null; then
+        ui_ok "Mac password already cached"
+    else
+        ui_info "enter your Mac password once — later installs reuse it"
+        if sudo -v </dev/tty; then
+            ui_ok "cached for this session"
+        else
+            ui_warn "sudo failed — some casks may ask again"
+            return 0
+        fi
+    fi
+    if [ -n "${DOTFILES_SUDO_KEEPALIVE:-}" ] && kill -0 "$DOTFILES_SUDO_KEEPALIVE" 2>/dev/null; then
+        return 0
+    fi
+    (
+        while sudo -n true; do
+            sleep 50
+            kill -0 "$$" || exit
+        done
+    ) 2>/dev/null &
+    DOTFILES_SUDO_KEEPALIVE=$!
+    export DOTFILES_SUDO_KEEPALIVE
+    disown "$DOTFILES_SUDO_KEEPALIVE" 2>/dev/null || true
+}
+
 # --- helpers ---
 
 load_brew() {
@@ -198,6 +232,7 @@ gh_logged_in() {
 # --- run ---
 
 ui_header
+keep_sudo
 
 ui_step "Command Line Tools"
 if xcode-select -p >/dev/null 2>&1; then

@@ -47,6 +47,7 @@ fi
 if [ -z "${DOTFILES_FROM_INSTALL:-}" ]; then
     ui_header
 fi
+keep_sudo
 
 ui_step "age private key"
 _age_key="$HOME/.config/chezmoi/key.txt"
@@ -197,6 +198,7 @@ _zsh="$(command -v zsh || true)"
 [ -x "$_zsh" ] || _zsh="/bin/zsh"
 
 ui_done
+stop_sudo_keepalive
 if [ -t 0 ] && [ -x "$_zsh" ]; then
     exec "$_zsh" -l
 fi
