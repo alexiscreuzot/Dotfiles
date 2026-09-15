@@ -37,3 +37,7 @@ Temporary Items
 *.backup
 *.bak
 *.old
+
+# Python
+__pycache__/
+*.pyc
