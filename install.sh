@@ -110,38 +110,81 @@ ui_ask() {
     done
 }
 
-# Prompt once, then refresh the sudo timestamp so pkg casks don't ask again.
+# Homebrew runs `sudo --reset-timestamp` on every `brew` invocation, so a
+# normal sudo ticket never survives to brew bundle. Cache the password in a
+# temp askpass instead; brew keeps SUDO_ASKPASS in its filtered environment.
 keep_sudo() {
     if ! command -v sudo >/dev/null 2>&1 || [ "$(id -u)" -eq 0 ]; then
         return 0
+    fi
+    if [ -n "${SUDO_ASKPASS:-}" ] && [ -x "$SUDO_ASKPASS" ]; then
+        if sudo -A -v 2>/dev/null; then
+            ui_ok "Mac password already cached"
+            return 0
+        fi
     fi
     if [ ! -r /dev/tty ] || [ ! -t 1 ]; then
         ui_info "no tty — some installs may ask for a password later"
         return 0
     fi
-    if sudo -n true 2>/dev/null; then
-        ui_ok "Mac password already cached"
-    else
-        ui_info "enter your Mac password once — later installs reuse it"
-        if sudo -v </dev/tty; then
-            ui_ok "cached for this session"
-        else
-            ui_warn "sudo failed — some casks may ask again"
-            return 0
+
+    _sudo_dir="$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-sudo.XXXXXX")"
+    chmod 700 "$_sudo_dir"
+    _sudo_pass="$_sudo_dir/pass"
+    _sudo_ask="$_sudo_dir/askpass"
+    _old_umask="$(umask)"
+    umask 077
+    : > "$_sudo_pass"
+    printf '#!/bin/sh\nexec cat '\''%s'\''\n' "$_sudo_pass" > "$_sudo_ask"
+    umask "$_old_umask"
+    chmod 700 "$_sudo_ask"
+
+    ui_info "enter your Mac password once — later installs reuse it"
+    _ok=0
+    _try=0
+    while [ "$_try" -lt 2 ]; do
+        printf '          Password: ' > /dev/tty
+        _pw=""
+        IFS= read -r -s _pw < /dev/tty || _pw=""
+        printf '\n' > /dev/tty
+        _try=$((_try + 1))
+        if [ -z "$_pw" ]; then
+            continue
         fi
-    fi
-    if [ -n "${DOTFILES_SUDO_KEEPALIVE:-}" ] && kill -0 "$DOTFILES_SUDO_KEEPALIVE" 2>/dev/null; then
+        printf '%s\n' "$_pw" > "$_sudo_pass"
+        unset _pw
+        SUDO_ASKPASS="$_sudo_ask"
+        export SUDO_ASKPASS
+        if sudo -A -v 2>/dev/null; then
+            _ok=1
+            break
+        fi
+        ui_warn "incorrect password, try again"
+        : > "$_sudo_pass"
+        unset SUDO_ASKPASS
+    done
+
+    if [ "$_ok" -ne 1 ]; then
+        rm -rf "$_sudo_dir"
+        unset SUDO_ASKPASS
+        ui_warn "sudo failed — some casks may ask again"
         return 0
     fi
-    (
-        while sudo -n true; do
-            sleep 50
-            kill -0 "$$" || exit
-        done
-    ) 2>/dev/null &
-    DOTFILES_SUDO_KEEPALIVE=$!
-    export DOTFILES_SUDO_KEEPALIVE
-    disown "$DOTFILES_SUDO_KEEPALIVE" 2>/dev/null || true
+
+    export SUDO_ASKPASS="$_sudo_ask"
+    export DOTFILES_SUDO_DIR="$_sudo_dir"
+    if [ -z "${DOTFILES_SUDO_TRAP:-}" ]; then
+        trap 'stop_sudo_keepalive' EXIT
+        export DOTFILES_SUDO_TRAP=1
+    fi
+    ui_ok "cached for this session"
+}
+
+stop_sudo_keepalive() {
+    if [ -n "${DOTFILES_SUDO_DIR:-}" ]; then
+        rm -rf "$DOTFILES_SUDO_DIR"
+    fi
+    unset DOTFILES_SUDO_DIR SUDO_ASKPASS
 }
 
 # --- helpers ---
