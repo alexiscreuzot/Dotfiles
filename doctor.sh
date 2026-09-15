@@ -399,6 +399,14 @@ else
     bad "~/.zshrc is missing" "chezmoi apply --source $DOTFILES_DIR ~/.zshrc"
 fi
 
+if [ -d "$HOME/.oh-my-zsh" ]; then
+    _omz_owner="$(stat -f %Su "$HOME/.oh-my-zsh" 2>/dev/null || true)"
+    if [ -n "$_omz_owner" ] && [ "$_omz_owner" != "$(id -un)" ]; then
+        warn "oh-my-zsh is owned by $_omz_owner" \
+            "sudo chown -R $(id -un) ~/.oh-my-zsh"
+    fi
+fi
+
 _prompt=""
 if [ -f "$HOME/.oh-my-zsh/oh-my-zsh.sh" ]; then
     _prompt="$(join oh-my-zsh "$(git -C "$HOME/.oh-my-zsh" rev-parse --short HEAD 2>/dev/null || true)")"
