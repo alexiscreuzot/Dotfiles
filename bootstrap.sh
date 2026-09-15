@@ -12,22 +12,6 @@ fi
 # shellcheck source=ui.sh
 . "$DOTFILES_DIR/ui.sh"
 
-load_brew() {
-    if command -v brew >/dev/null 2>&1; then
-        eval "$(brew shellenv)"
-        return 0
-    fi
-    if [ -x /opt/homebrew/bin/brew ]; then
-        eval "$(/opt/homebrew/bin/brew shellenv)"
-        return 0
-    fi
-    if [ -x /usr/local/bin/brew ]; then
-        eval "$(/usr/local/bin/brew shellenv)"
-        return 0
-    fi
-    return 1
-}
-
 load_brew || true
 
 _missing=""
@@ -48,6 +32,8 @@ if [ -z "${DOTFILES_FROM_INSTALL:-}" ]; then
     ui_header
 fi
 keep_sudo
+reclaim_if_foreign "$HOME/.oh-my-zsh"
+reclaim_if_foreign "$HOME/.config/chezmoi"
 
 ui_step "age private key"
 _age_key="$HOME/.config/chezmoi/key.txt"
@@ -179,7 +165,7 @@ if [ "$_login_shell" = "/bin/zsh" ] || [ "$_login_shell" = "/usr/local/bin/zsh" 
     ui_ok "login shell  $_login_shell"
 else
     ui_info "login shell is ${_login_shell:-unknown} — switching to /bin/zsh"
-    if chsh -s /bin/zsh; then
+    if dotfiles_sudo chsh -s /bin/zsh "$USER"; then
         ui_ok "login shell  /bin/zsh"
     else
         ui_warn "could not change login shell — you can run:  chsh -s /bin/zsh"

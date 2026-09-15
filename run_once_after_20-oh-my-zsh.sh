@@ -3,6 +3,22 @@
 
 _omz="$HOME/.oh-my-zsh"
 
+_sudo() {
+    if [ "$(id -u)" -eq 0 ]; then
+        "$@"
+        return
+    fi
+    if [ -n "${SUDO_ASKPASS:-}" ] && [ -x "$SUDO_ASKPASS" ]; then
+        sudo -A "$@"
+        return
+    fi
+    if [ -r /dev/tty ]; then
+        sudo "$@" </dev/tty
+        return
+    fi
+    sudo "$@"
+}
+
 # A previous sudo install leaves ~/.oh-my-zsh owned by root, so ln fails
 # and chezmoi aborts the rest of apply.
 _own_oh_my_zsh() {
@@ -11,14 +27,7 @@ _own_oh_my_zsh() {
         return 0
     fi
     echo "oh-my-zsh is not owned by $(id -un) — taking ownership"
-    if [ -n "${SUDO_ASKPASS:-}" ] && [ -x "$SUDO_ASKPASS" ]; then
-        sudo -A chown -R "$(id -u):$(id -g)" "$_omz"
-    elif [ -r /dev/tty ]; then
-        sudo chown -R "$(id -u):$(id -g)" "$_omz" </dev/tty
-    else
-        echo "warning: run  sudo chown -R $(id -un) ~/.oh-my-zsh"
-        return 1
-    fi
+    _sudo chown -R "$(id -u):$(id -g)" "$_omz"
 }
 
 if [ ! -d "$_omz" ]; then

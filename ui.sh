@@ -15,6 +15,8 @@ fi
 
 DOTFILES_STEPS="${DOTFILES_STEPS:-8}"
 
+# --- UI ---
+
 ui_header() {
     printf '\n'
     printf '  %sdotfiles%s\n' "$C_BOLD" "$C_RESET"
@@ -142,6 +144,8 @@ ui_done() {
     printf '\n'
 }
 
+# --- sudo ---
+
 # Homebrew runs `sudo --reset-timestamp` on every `brew` invocation, so a
 # normal sudo ticket never survives to brew bundle. Cache the password in a
 # temp askpass instead; brew keeps SUDO_ASKPASS in its filtered environment.
@@ -219,4 +223,55 @@ stop_sudo_keepalive() {
         rm -rf "$DOTFILES_SUDO_DIR"
     fi
     unset DOTFILES_SUDO_DIR SUDO_ASKPASS
+}
+
+# Prefer the session askpass so brew's sudo --reset-timestamp doesn't prompt.
+dotfiles_sudo() {
+    if [ "$(id -u)" -eq 0 ]; then
+        "$@"
+        return
+    fi
+    if [ -n "${SUDO_ASKPASS:-}" ] && [ -x "$SUDO_ASKPASS" ]; then
+        sudo -A "$@"
+        return
+    fi
+    if [ -r /dev/tty ]; then
+        sudo "$@" </dev/tty
+        return
+    fi
+    sudo "$@"
+}
+
+# Root-owned files in $HOME (oh-my-zsh installed with sudo) break later ln/mkdir.
+reclaim_if_foreign() {
+    _path="$1"
+    [ -e "$_path" ] || return 0
+    if [ "$(stat -f %u "$_path" 2>/dev/null || echo 0)" -eq "$(id -u)" ]; then
+        return 0
+    fi
+    ui_info "taking ownership of $_path"
+    if dotfiles_sudo chown -R "$(id -u):$(id -g)" "$_path"; then
+        ui_ok "owned by $(id -un)  $_path"
+    else
+        ui_warn "could not take ownership of $_path"
+    fi
+}
+
+# --- brew ---
+
+# Add brew to PATH whether it is already on PATH or in a default prefix.
+load_brew() {
+    if command -v brew >/dev/null 2>&1; then
+        eval "$(brew shellenv)"
+        return 0
+    fi
+    if [ -x /opt/homebrew/bin/brew ]; then
+        eval "$(/opt/homebrew/bin/brew shellenv)"
+        return 0
+    fi
+    if [ -x /usr/local/bin/brew ]; then
+        eval "$(/usr/local/bin/brew shellenv)"
+        return 0
+    fi
+    return 1
 }

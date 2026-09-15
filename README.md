@@ -16,7 +16,7 @@ sh -c "$(curl -fsSL "https://raw.githubusercontent.com/alexiscreuzot/Dotfiles/ma
 
 A fresh Mac installs the toolchain, signs in to GitHub over SSH, restores encrypted secrets, and applies every config in this repo. The checkout lives at `~/Developer/alexiscreuzot/Dotfiles`, with a symlink at `~/Developer/Dotfiles` so `~/.zshrc` and chezmoi keep a stable path. When it finishes, a login zsh starts with aliases and path already loaded.
 
-`install.sh` installs **Bitwarden** first, then authenticates GitHub in Safari so the extension can fill the login. `gh` generates an `id_ed25519` key and uploads it. The only remaining paste is the **age secret key** into `~/.config/chezmoi/key.txt`.
+`install.sh` installs **Bitwarden** first, then authenticates GitHub in Safari so the extension can fill the login. `gh` generates an `id_ed25519` key and uploads it. The only remaining paste is the **age secret key** into `~/.config/chezmoi/key.txt`. It asks for the **Mac password once** and reuses it for Homebrew, the oh-my-zsh ownership fix, and the login shell.
 
 ---
 

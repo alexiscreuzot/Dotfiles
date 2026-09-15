@@ -110,6 +110,8 @@ ui_ask() {
     done
 }
 
+# --- sudo (keep in sync with ui.sh) ---
+
 # Homebrew runs `sudo --reset-timestamp` on every `brew` invocation, so a
 # normal sudo ticket never survives to brew bundle. Cache the password in a
 # temp askpass instead; brew keeps SUDO_ASKPASS in its filtered environment.
@@ -187,7 +189,7 @@ stop_sudo_keepalive() {
     unset DOTFILES_SUDO_DIR SUDO_ASKPASS
 }
 
-# --- helpers ---
+# --- brew ---
 
 load_brew() {
     if command -v brew >/dev/null 2>&1; then
@@ -235,6 +237,8 @@ ensure_formula() {
     ui_fail "$_name  failed to install — continuing anyway"
     return 0
 }
+
+# --- GitHub SSH ---
 
 unlock_ssh() {
     if [ -f "$HOME/.ssh/id_ed25519" ]; then

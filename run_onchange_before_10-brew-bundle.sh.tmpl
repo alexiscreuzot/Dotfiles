@@ -31,11 +31,13 @@ EOF
 # Skip casks whose app, payload, or leftover helper is already on disk.
 # brew bundle would otherwise try to reinstall them (and hang on pkg
 # installers like NordVPN).
-_skip="$(python3 "$_src/cask-present.py" --skip --brewfile "$_brewfile" || true)"
-if [ -n "$_skip" ]; then
-    HOMEBREW_BUNDLE_CASK_SKIP="${HOMEBREW_BUNDLE_CASK_SKIP:+$HOMEBREW_BUNDLE_CASK_SKIP }$_skip"
-    export HOMEBREW_BUNDLE_CASK_SKIP
-    echo "already installed, skipping: $_skip"
+if [ -f "$_src/cask-present.py" ]; then
+    _skip="$(python3 "$_src/cask-present.py" --skip --brewfile "$_brewfile" || true)"
+    if [ -n "$_skip" ]; then
+        HOMEBREW_BUNDLE_CASK_SKIP="${HOMEBREW_BUNDLE_CASK_SKIP:+$HOMEBREW_BUNDLE_CASK_SKIP }$_skip"
+        export HOMEBREW_BUNDLE_CASK_SKIP
+        echo "already installed, skipping: $_skip"
+    fi
 fi
 
 # Don't hard-fail: anything brew still cannot adopt is reported, then we continue.

@@ -403,7 +403,7 @@ if [ -d "$HOME/.oh-my-zsh" ]; then
     _omz_owner="$(stat -f %Su "$HOME/.oh-my-zsh" 2>/dev/null || true)"
     if [ -n "$_omz_owner" ] && [ "$_omz_owner" != "$(id -un)" ]; then
         warn "oh-my-zsh is owned by $_omz_owner" \
-            "sudo chown -R $(id -un) ~/.oh-my-zsh"
+            "bash $DOTFILES_DIR/bootstrap.sh"
     fi
 fi
 
