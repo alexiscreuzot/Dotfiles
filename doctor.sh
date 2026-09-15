@@ -93,6 +93,18 @@ have_pkg() {
     return 1
 }
 
+# Receipt without the app: Caskroom left a symlink after /Applications was cleared.
+cask_app_gone() {
+    _root="${HOMEBREW_PREFIX:-/opt/homebrew}/Caskroom/$1"
+    [ -d "$_root" ] || return 1
+    for _app in "$_root"/*/*.app; do
+        if [ -L "$_app" ] && [ ! -e "$_app" ]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
 # Quoted tokens from the Brewfile (`brew "foo"`, `cask "tap/bar"`).
 brewfile_kind() {
     awk -v kind="$1" '
@@ -366,11 +378,15 @@ if command -v brew >/dev/null 2>&1; then
 $(brewfile_kind brew)
 EOF
 
-    _ok_c="" _miss_c=""
+    _ok_c="" _miss_c="" _ghost_c=""
     while IFS= read -r _p; do
         [ -n "$_p" ] || continue
         if have_pkg "$_p" "$_inst_c"; then
-            _ok_c="${_ok_c}${_p} "
+            if cask_app_gone "$_p"; then
+                _ghost_c="${_ghost_c}${_p} "
+            else
+                _ok_c="${_ok_c}${_p} "
+            fi
         else
             _miss_c="${_miss_c}${_p} "
         fi
@@ -392,6 +408,10 @@ EOF
     fi
     if [ "$_miss_any" -eq 1 ]; then
         ui_note "brew bundle install --file=$DOTFILES_DIR/Brewfile"
+    fi
+    if [ -n "$_ghost_c" ]; then
+        warn_names "cask  app is gone" "$(printf '%s' "$_ghost_c" | as_line)"
+        ui_note "brew reinstall --cask <name>  (bundle skips these)"
     fi
 fi
 
