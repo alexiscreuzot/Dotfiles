@@ -2,13 +2,36 @@
 # Re-runs whenever the Brewfile changes.
 # Brewfile hash: {{ include "Brewfile" | sha256sum }}
 
+_src="{{ .chezmoi.sourceDir }}"
+_brewfile="$_src/Brewfile"
+
 if ! command -v brew >/dev/null 2>&1; then
     echo "Homebrew not found, skipping brew bundle"
     exit 0
 fi
 
-# Don't hard-fail: casks for apps already installed manually
-# report an error under brew bundle. Adopt them with:
-#   brew install --cask --force <name>
-brew bundle --file="{{ .chezmoi.sourceDir }}/Brewfile" || \
+# Tap first so brew info can see tap casks (Echo, SuperCmd).
+while read -r _tap _url; do
+    [ -n "$_tap" ] || continue
+    if [ -n "$_url" ]; then
+        brew tap "$_tap" "$_url" >/dev/null 2>&1 || true
+    else
+        brew tap "$_tap" >/dev/null 2>&1 || true
+    fi
+done <<EOF
+$(awk -F'"' '/^tap / { print $2, $4 }' "$_brewfile")
+EOF
+
+# Skip casks whose app, payload, or leftover helper is already on disk.
+# brew bundle would otherwise try to reinstall them (and hang on pkg
+# installers like NordVPN).
+_skip="$(python3 "$_src/cask-present.py" --skip --brewfile "$_brewfile" || true)"
+if [ -n "$_skip" ]; then
+    HOMEBREW_BUNDLE_CASK_SKIP="${HOMEBREW_BUNDLE_CASK_SKIP:+$HOMEBREW_BUNDLE_CASK_SKIP }$_skip"
+    export HOMEBREW_BUNDLE_CASK_SKIP
+    echo "already installed, skipping: $_skip"
+fi
+
+# Don't hard-fail: anything brew still cannot adopt is reported, then we continue.
+brew bundle --file="$_brewfile" || \
     echo "warning: some Brewfile entries failed — see output above"

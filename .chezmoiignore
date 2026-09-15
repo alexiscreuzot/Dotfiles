@@ -4,6 +4,7 @@ install.sh
 doctor.sh
 ui.sh
 Brewfile
+cask-present.py
 aliases
 functions
 path

@@ -444,7 +444,7 @@ if command -v brew >/dev/null 2>&1; then
 $(brewfile_kind brew)
 EOF
 
-    _ok_c="" _miss_c="" _ghost_c=""
+    _ok_c="" _miss_c="" _ghost_c="" _disk_c="" _left_c=""
     while IFS= read -r _p; do
         [ -n "$_p" ] || continue
         if have_pkg "$_p" "$_inst_c"; then
@@ -460,8 +460,24 @@ EOF
 $(brewfile_kind cask)
 EOF
 
+    if [ -n "$_miss_c" ] && [ -f "$DOTFILES_DIR/cask-present.py" ]; then
+        _still=""
+        while IFS="$(printf '\t')" read -r _p _state; do
+            [ -n "$_p" ] || continue
+            case "$_state" in
+                present) _disk_c="${_disk_c}${_p} " ;;
+                leftover) _left_c="${_left_c}${_p} " ;;
+                *) _still="${_still}${_p} " ;;
+            esac
+        done <<EOF
+$(python3 "$DOTFILES_DIR/cask-present.py" --classify --brewfile "$DOTFILES_DIR/Brewfile" $_miss_c 2>/dev/null || true)
+EOF
+        _miss_c="$_still"
+    fi
+
     pkg_table ok brew "$_ok_f" "$_vers_f"
     pkg_table ok cask "$_ok_c" "$_vers_c"
+    pkg_table ok "cask  on disk" "$_disk_c"
 
     _miss_any=0
     if [ -n "$_miss_f" ]; then
@@ -474,6 +490,10 @@ EOF
     fi
     if [ "$_miss_any" -eq 1 ]; then
         ui_note "brew bundle install --file=$DOTFILES_DIR/Brewfile"
+    fi
+    if [ -n "$_left_c" ]; then
+        pkg_table warn "cask  leftovers, app is gone" "$_left_c"
+        ui_note "brew bundle skips these"
     fi
     if [ -n "$_ghost_c" ]; then
         pkg_table warn "cask  app is gone" "$_ghost_c" "$_vers_c"

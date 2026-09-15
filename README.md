@@ -111,5 +111,5 @@ SSH **keys** are not in this repo. `install.sh` has `gh` generate `id_ed25519` a
 
 ## Notes
 
-- Apps that were installed outside Homebrew before this setup will warn on `brew bundle`. Adopt them with `brew install --cask --force <name>` (quit the app first).
+- Apps already on disk (or leftover pkg receipts/helpers) are skipped by `brew bundle`. Adopt them later with `brew install --cask --force <name>` if you want Homebrew to own them.
 - Zed is the default handler for Finder text files. The Homebrew cask puts `zed` on PATH.
