@@ -1,0 +1,451 @@
+#!/usr/bin/env python3
+"""Jira CLI for ENT / Forum ticket workflows.
+
+Usage:
+  jira get <KEY>                    Fetch a ticket (summary, description, AC, ...)
+  jira create                       Create a ticket, driven by env vars (see below)
+  jira edit <KEY> [options]         Edit fields, comment, or transition
+
+Credentials (JIRA_EMAIL, JIRA_TOKEN, JIRA_DOMAIN) come from ~/.secrets.
+Exported environment variables win. A gitignored .env in the current
+directory is an optional overlay — never commit tokens.
+
+create env vars:
+  Required: JIRA_ISSUE_TYPE (Story|Task|Bug), JIRA_SUMMARY, JIRA_DESCRIPTION
+  Optional: JIRA_AC, JIRA_STEPS, JIRA_POINTS, JIRA_CATEGORY, JIRA_CATEGORY_CHILD,
+            JIRA_COMPONENTS (comma-separated), JIRA_TEAM_ID, JIRA_PRIORITY,
+            JIRA_LABELS (comma-separated), JIRA_PARENT, JIRA_ASSIGNEE,
+            JIRA_REPORTER, JIRA_DEVELOPER, JIRA_SPRINT
+  JIRA_SPRINT: unset = active sprint of the Forum Sprint Board, "none" = skip,
+            or a sprint id to pin. Assignee/reporter/developer default to the
+            signed-in Jira user.
+"""
+from __future__ import annotations
+
+import argparse
+import base64
+import json
+import os
+import sys
+import urllib.error
+import urllib.parse
+import urllib.request
+from pathlib import Path
+
+SECRETS_PATH = Path.home() / ".secrets"
+PROJECT = "ENT"
+BOARD_ID = 2895  # Forum Sprint Board
+
+F = {
+    "points": "customfield_10090",     # Story Points
+    "category": "customfield_14799",   # Category of Work 3 (cascading select)
+    "team": "customfield_10001",       # Team (Advanced Roadmaps)
+    "sprint": "customfield_10021",     # Sprint
+    "ac": "customfield_10185",         # Acceptance Criteria
+    "steps": "customfield_10037",      # Steps to Reproduce
+    "developer": "customfield_11576",  # Developer
+}
+
+ISSUE_TYPE_IDS = {"Epic": "10000", "Story": "10001", "Task": "10002", "Bug": "10004"}
+
+# Option IDs for customfield_14799, harvested from ENT issues (the field-context
+# API needs admin). Add new options here when they first appear on a ticket.
+CATEGORY_IDS = {
+    "Enhancement": "20022",
+    "Feature": "20023",
+    "KTLO": "18768",
+    "Product Enhancement": "18778",
+    "Product Priority": "18776",
+    "Technical Improvement": "18777",
+}
+CATEGORY_CHILD_IDS = {
+    "KTLO": {
+        "Emergency Work": "18769",
+        "High Risk Remediation": "18770",
+        "Reliability and Resilience": "18771",
+        "Operational Run the Business": "18772",
+        "Tech Debt Reduction / Lifecycle Management": "18773",
+        "Governance and Control Execution": "18774",
+    }
+}
+
+
+# ---------------------------------------------------------------- credentials
+
+def parse_env_file(path: Path) -> dict[str, str]:
+    env: dict[str, str] = {}
+    if not path.exists():
+        return env
+    for line in path.read_text().splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        if line.startswith("export "):
+            line = line[len("export "):]
+        k, v = line.split("=", 1)
+        env[k.strip()] = v.strip().strip('"').strip("'")
+    return env
+
+
+def load_env() -> dict[str, str]:
+    env = {}
+    env.update(parse_env_file(SECRETS_PATH))
+    env.update(parse_env_file(Path.cwd() / ".env"))
+    for key in ("JIRA_EMAIL", "JIRA_TOKEN", "JIRA_DOMAIN"):
+        if os.environ.get(key):
+            env[key] = os.environ[key]
+    missing = [k for k in ("JIRA_EMAIL", "JIRA_TOKEN", "JIRA_DOMAIN") if not env.get(k)]
+    if missing:
+        sys.exit(f"Missing {', '.join(missing)} in {SECRETS_PATH} (or exported env vars)")
+    env["JIRA_DOMAIN"] = env["JIRA_DOMAIN"].replace("https://", "").rstrip("/")
+    return env
+
+
+ENV = load_env()
+AUTH = base64.b64encode(f"{ENV['JIRA_EMAIL']}:{ENV['JIRA_TOKEN']}".encode()).decode()
+BASE = f"https://{ENV['JIRA_DOMAIN']}"
+BROWSE = f"{BASE}/browse"
+
+
+def request(method: str, path: str, body: dict | None = None, agile: bool = False):
+    base = f"{BASE}/rest/agile/1.0" if agile else f"{BASE}/rest/api/3"
+    req = urllib.request.Request(
+        f"{base}{path}",
+        data=None if body is None else json.dumps(body).encode(),
+        method=method,
+    )
+    req.add_header("Authorization", f"Basic {AUTH}")
+    req.add_header("Accept", "application/json")
+    if body is not None:
+        req.add_header("Content-Type", "application/json")
+    try:
+        with urllib.request.urlopen(req) as r:
+            raw = r.read().decode()
+            return json.loads(raw) if raw else {}
+    except urllib.error.HTTPError as e:
+        print(f"Jira {method} {path} failed (HTTP {e.code}):", file=sys.stderr)
+        print(e.read().decode()[:2000], file=sys.stderr)
+        sys.exit(1)
+
+
+def myself() -> str:
+    return request("GET", "/myself")["accountId"]
+
+
+# ------------------------------------------------------------------ ADF <-> text
+
+def _para(text: str) -> dict:
+    return {"type": "paragraph", "content": [{"type": "text", "text": text}]}
+
+
+def _heading(text: str, level: int) -> dict:
+    return {"type": "heading", "attrs": {"level": level}, "content": [{"type": "text", "text": text}]}
+
+
+def adf_from_text(text: str) -> dict:
+    """Plain text to ADF. '- ' lines become bullets, '## '/'### ' become headings."""
+    blocks, bullets = [], []
+
+    def flush_bullets():
+        if bullets:
+            blocks.append({
+                "type": "bulletList",
+                "content": [{"type": "listItem", "content": [_para(b)]} for b in bullets],
+            })
+            bullets.clear()
+
+    for raw in text.splitlines():
+        line = raw.rstrip()
+        if line.startswith("- "):
+            bullets.append(line[2:].strip())
+            continue
+        flush_bullets()
+        if not line.strip():
+            continue
+        if line.startswith("### "):
+            blocks.append(_heading(line[4:].strip(), 3))
+        elif line.startswith("## "):
+            blocks.append(_heading(line[3:].strip(), 2))
+        else:
+            blocks.append(_para(line))
+    flush_bullets()
+    return {"type": "doc", "version": 1, "content": blocks}
+
+
+def text_from_adf(node) -> str:
+    lines: list[str] = []
+
+    def inline(n) -> str:
+        if not isinstance(n, dict):
+            return ""
+        if n.get("type") == "text":
+            return n.get("text", "")
+        return "".join(inline(c) for c in n.get("content", []) or [])
+
+    def walk(n, prefix=""):
+        if not isinstance(n, dict):
+            return
+        t = n.get("type")
+        if t == "paragraph":
+            lines.append(prefix + inline(n))
+        elif t == "heading":
+            level = n.get("attrs", {}).get("level", 3)
+            lines.append("#" * level + " " + inline(n))
+        elif t == "bulletList":
+            for item in n.get("content", []):
+                walk(item, "- ")
+        elif t == "listItem":
+            for c in n.get("content", []):
+                walk(c, prefix)
+        else:
+            for c in n.get("content", []) or []:
+                walk(c, prefix)
+
+    walk(node)
+    return "\n".join(lines)
+
+
+# ------------------------------------------------------------------ field helpers
+
+def category_field(parent: str, child: str | None) -> dict:
+    pid = CATEGORY_IDS.get(parent)
+    if not pid:
+        sys.exit(f"Unknown Category of Work '{parent}'. Known: {', '.join(sorted(CATEGORY_IDS))}")
+    value = {"id": pid}
+    if child:
+        cid = CATEGORY_CHILD_IDS.get(parent, {}).get(child)
+        if not cid:
+            known = ", ".join(sorted(CATEGORY_CHILD_IDS.get(parent, {}))) or "none"
+            sys.exit(f"Unknown '{parent}' child '{child}'. Known: {known}")
+        value["child"] = {"id": cid}
+    return value
+
+
+def resolve_components(names: list[str]) -> list[dict]:
+    known = {c["name"].lower(): c["id"] for c in request("GET", f"/project/{PROJECT}").get("components", [])}
+    out = []
+    for name in names:
+        name = name.strip()
+        if not name:
+            continue
+        if name.isdigit():
+            out.append({"id": name})
+            continue
+        cid = known.get(name.lower())
+        if not cid:
+            sys.exit(f"Unknown component '{name}'. Known: {', '.join(sorted(known))}")
+        out.append({"id": cid})
+    return out
+
+
+def active_sprint() -> int | None:
+    d = request("GET", f"/board/{BOARD_ID}/sprint?state=active", agile=True)
+    values = d.get("values", [])
+    return values[0]["id"] if values else None
+
+
+def sprint_value(spec: str | None, default_active: bool) -> int | None:
+    if spec and spec.lower() == "none":
+        return None
+    if spec and spec.isdigit():
+        return int(spec)
+    if spec is None and default_active:
+        return active_sprint()
+    if spec:
+        sys.exit(f"Invalid sprint '{spec}' (use an id, 'active', or 'none')")
+    return None
+
+
+def account_id(spec: str | None) -> str:
+    if not spec or spec == "me":
+        return myself()
+    return spec
+
+
+# ---------------------------------------------------------------------- commands
+
+GET_FIELDS = [
+    "summary", "issuetype", "status", "priority", "assignee", "reporter",
+    "components", "labels", "parent", "description",
+    F["points"], F["category"], F["team"], F["sprint"], F["ac"], F["steps"], F["developer"],
+]
+
+
+def cmd_get(key: str):
+    d = request("GET", f"/issue/{key}?fields={','.join(GET_FIELDS)}")
+    f = d["fields"]
+    cat = f.get(F["category"]) or {}
+    sprints = f.get(F["sprint"]) or []
+    rows = [
+        ("KEY", d["key"]),
+        ("TYPE", (f.get("issuetype") or {}).get("name")),
+        ("SUMMARY", f.get("summary")),
+        ("STATUS", (f.get("status") or {}).get("name")),
+        ("PRIORITY", (f.get("priority") or {}).get("name")),
+        ("ASSIGNEE", (f.get("assignee") or {}).get("displayName")),
+        ("DEVELOPER", (f.get(F["developer"]) or {}).get("displayName")),
+        ("POINTS", f.get(F["points"])),
+        ("CATEGORY", " / ".join(x for x in [cat.get("value"), (cat.get("child") or {}).get("value")] if x)),
+        ("TEAM", (f.get(F["team"]) or {}).get("name")),
+        ("SPRINT", ", ".join(f"{s.get('name')} ({s.get('state')})" for s in sprints)),
+        ("COMPONENTS", ", ".join(c["name"] for c in f.get("components") or [])),
+        ("LABELS", ", ".join(f.get("labels") or [])),
+        ("PARENT", (f.get("parent") or {}).get("key")),
+        ("URL", f"{BROWSE}/{d['key']}"),
+    ]
+    for name, value in rows:
+        if value not in (None, ""):
+            print(f"{name}: {value}")
+    for title, field in (("DESCRIPTION", "description"), ("ACCEPTANCE CRITERIA", F["ac"]), ("STEPS TO REPRODUCE", F["steps"])):
+        body = f.get(field)
+        if body:
+            print(f"\n## {title}\n")
+            print(text_from_adf(body) if isinstance(body, dict) else body)
+
+
+def cmd_create():
+    e = os.environ
+
+    def required(name: str) -> str:
+        if not e.get(name):
+            sys.exit(f"Missing required env var {name} (see docstring)")
+        return e[name]
+
+    issue_type = required("JIRA_ISSUE_TYPE")
+    fields = {
+        "project": {"key": PROJECT},
+        "issuetype": {"id": ISSUE_TYPE_IDS.get(issue_type, issue_type)},
+        "summary": required("JIRA_SUMMARY"),
+        "description": adf_from_text(required("JIRA_DESCRIPTION")),
+    }
+
+    me = myself()
+
+    def acct(name: str) -> str:
+        return account_id(e[name]) if e.get(name) else me
+
+    fields["assignee"] = {"accountId": acct("JIRA_ASSIGNEE")}
+    fields["reporter"] = {"accountId": acct("JIRA_REPORTER")}
+    fields[F["developer"]] = {"accountId": acct("JIRA_DEVELOPER")}
+
+    if e.get("JIRA_AC"):
+        fields[F["ac"]] = adf_from_text(e["JIRA_AC"])
+    if e.get("JIRA_STEPS"):
+        fields[F["steps"]] = adf_from_text(e["JIRA_STEPS"])
+    if e.get("JIRA_POINTS"):
+        fields[F["points"]] = float(e["JIRA_POINTS"])
+    if e.get("JIRA_PRIORITY"):
+        fields["priority"] = {"name": e["JIRA_PRIORITY"]}
+    if e.get("JIRA_COMPONENTS"):
+        fields["components"] = resolve_components(e["JIRA_COMPONENTS"].split(","))
+    if e.get("JIRA_TEAM_ID"):
+        fields[F["team"]] = e["JIRA_TEAM_ID"]
+    if e.get("JIRA_LABELS"):
+        fields["labels"] = [l.strip() for l in e["JIRA_LABELS"].split(",") if l.strip()]
+    if e.get("JIRA_PARENT"):
+        fields["parent"] = {"key": e["JIRA_PARENT"]}
+    if e.get("JIRA_CATEGORY"):
+        fields[F["category"]] = category_field(e["JIRA_CATEGORY"], e.get("JIRA_CATEGORY_CHILD"))
+
+    sprint = sprint_value(e.get("JIRA_SPRINT"), default_active=True)
+    if sprint:
+        fields[F["sprint"]] = sprint
+
+    created = request("POST", "/issue", {"fields": fields})
+    print(f"Created {created['key']}")
+    print(f"{BROWSE}/{created['key']}")
+
+
+def cmd_edit(argv):
+    p = argparse.ArgumentParser(prog="jira edit", description="Edit a Jira ticket")
+    p.add_argument("key")
+    p.add_argument("--summary")
+    p.add_argument("--description")
+    p.add_argument("--ac", help="Acceptance Criteria")
+    p.add_argument("--steps", help="Steps to Reproduce")
+    p.add_argument("--points", type=float)
+    p.add_argument("--priority")
+    p.add_argument("--assignee", help="'me' or an accountId")
+    p.add_argument("--developer", help="'me' or an accountId")
+    p.add_argument("--team", help="Team id (Advanced Roadmaps UUID)")
+    p.add_argument("--category", help="'Parent' or 'Parent/Child'")
+    p.add_argument("--components", help="Comma-separated component names")
+    p.add_argument("--labels", help="Comma-separated labels (replaces existing)")
+    p.add_argument("--parent", help="Parent epic key")
+    p.add_argument("--sprint", help="Sprint id, 'active', or 'none'")
+    p.add_argument("--comment", help="Add a comment")
+    p.add_argument("--transition", help="Transition name, e.g. 'In Progress'")
+    args = p.parse_args(argv)
+
+    fields = {}
+    if args.summary:
+        fields["summary"] = args.summary
+    if args.description:
+        fields["description"] = adf_from_text(args.description)
+    if args.ac:
+        fields[F["ac"]] = adf_from_text(args.ac)
+    if args.steps:
+        fields[F["steps"]] = adf_from_text(args.steps)
+    if args.points is not None:
+        fields[F["points"]] = args.points
+    if args.priority:
+        fields["priority"] = {"name": args.priority}
+    if args.assignee:
+        fields["assignee"] = {"accountId": account_id(args.assignee)}
+    if args.developer:
+        fields[F["developer"]] = {"accountId": account_id(args.developer)}
+    if args.team:
+        fields[F["team"]] = args.team
+    if args.category:
+        parent, _, child = args.category.partition("/")
+        fields[F["category"]] = category_field(parent.strip(), child.strip() or None)
+    if args.components:
+        fields["components"] = resolve_components(args.components.split(","))
+    if args.labels:
+        fields["labels"] = [l.strip() for l in args.labels.split(",") if l.strip()]
+    if args.parent:
+        fields["parent"] = {"key": args.parent}
+    if args.sprint:
+        sprint = sprint_value(args.sprint, default_active=False)
+        fields[F["sprint"]] = [sprint] if sprint else []
+
+    did = []
+    if fields:
+        request("PUT", f"/issue/{args.key}", {"fields": fields})
+        did.append("updated fields: " + ", ".join(sorted(fields)))
+    if args.comment:
+        request("POST", f"/issue/{args.key}/comment", {"body": adf_from_text(args.comment)})
+        did.append("added comment")
+    if args.transition:
+        transitions = request("GET", f"/issue/{args.key}/transitions").get("transitions", [])
+        match = next((t for t in transitions if t["name"].lower() == args.transition.lower()), None)
+        if not match:
+            names = ", ".join(t["name"] for t in transitions)
+            sys.exit(f"No transition '{args.transition}' available for {args.key}. Available: {names}")
+        request("POST", f"/issue/{args.key}/transitions", {"transition": {"id": match["id"]}})
+        did.append(f"transitioned to {match['name']}")
+
+    if not did:
+        p.error("nothing to do — pass at least one of --summary/--description/--ac/--steps/"
+                "--points/--priority/--assignee/--developer/--team/--category/--components/"
+                "--labels/--parent/--sprint/--comment/--transition")
+    print(f"{args.key}: " + "; ".join(did))
+    print(f"{BROWSE}/{args.key}")
+
+
+def main():
+    if len(sys.argv) < 2 or sys.argv[1] not in ("get", "create", "edit"):
+        sys.exit("usage: jira get <KEY> | jira create | jira edit <KEY> [options]")
+    cmd, rest = sys.argv[1], sys.argv[2:]
+    if cmd == "get":
+        if len(rest) != 1:
+            sys.exit("usage: jira get <KEY>")
+        cmd_get(rest[0])
+    elif cmd == "create":
+        cmd_create()
+    else:
+        cmd_edit(rest)
+
+
+if __name__ == "__main__":
+    main()

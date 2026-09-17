@@ -1,0 +1,8 @@
+{
+  "project": "ENT",
+  "summaryPrefix": "iOS: ",
+  "components": ["Forum Client"],
+  "team": {"id": "baa3ddc7-ab38-401a-8802-2bdf060684ee", "name": "Forum Client"},
+  "priority": "Medium",
+  "categoryOfWork": {"Story": "Product Enhancement", "Task": "Technical Improvement", "Bug": "KTLO"}
+}

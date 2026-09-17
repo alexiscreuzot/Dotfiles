@@ -33,15 +33,26 @@ def month_range(year: int, month: int) -> tuple[str, str, str]:
 
 def load_env(path: str) -> dict[str, str]:
     env: dict[str, str] = {}
-    p = Path(path)
+    p = Path(path).expanduser()
     if not p.exists():
         return env
     for line in p.read_text().splitlines():
         line = line.strip()
         if not line or line.startswith("#") or "=" not in line:
             continue
+        if line.startswith("export "):
+            line = line[len("export "):]
         k, v = line.split("=", 1)
         env[k.strip()] = v.strip().strip('"').strip("'")
+    return env
+
+
+def jira_credentials(cfg: dict) -> dict[str, str]:
+    env: dict[str, str] = {}
+    env.update(load_env(str(Path.home() / ".secrets")))
+    if cfg.get("jiraEnvPath"):
+        env.update(load_env(cfg["jiraEnvPath"]))
+    env.update({k: os.environ[k] for k in ("JIRA_EMAIL", "JIRA_TOKEN", "JIRA_DOMAIN") if k in os.environ})
     return env
 
 
@@ -86,7 +97,7 @@ def jira_search(env: dict, jql: str, fields: str) -> list[dict]:
     email = env.get("JIRA_EMAIL")
     token = env.get("JIRA_TOKEN")
     if not (domain and email and token):
-        raise SystemExit(f"Missing Jira credentials in {graph_auth.load_config()['jiraEnvPath']}")
+        raise SystemExit("Missing Jira credentials in ~/.secrets")
     url = f"https://{domain}/rest/api/3/search/jql?" + urllib.parse.urlencode(
         {"jql": jql, "fields": fields, "maxResults": "100"}
     )
@@ -169,8 +180,7 @@ def main() -> None:
     for repo in cfg["repos"]:
         commits.extend(git_commits(repo, since, until))
     keys = sorted({k for c in commits for k in c["keys"]})
-    env = load_env(cfg["jiraEnvPath"])
-    env.update({k: os.environ[k] for k in ("JIRA_EMAIL", "JIRA_TOKEN", "JIRA_DOMAIN") if k in os.environ})
+    env = jira_credentials(cfg)
     fields = "summary,status,issuetype,resolutiondate,updated,customfield_14799,customfield_13217,customfield_10090"
     tickets: dict[str, dict] = {}
     if keys:

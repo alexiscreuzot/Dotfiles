@@ -29,9 +29,11 @@ dot_tmux.conf                          ~/.tmux.conf
 dot_tool-versions                      ~/.tool-versions
 private_dot_ssh/config                 ~/.ssh/config
 encrypted_private_dot_secrets.age      ~/.secrets
+dot_local/bin/jira                     ~/.local/bin/jira
 dot_config/gh/                         ~/.config/gh/
 dot_config/zed/                        ~/.config/zed/
 dot_cursor/rules · skills · commands   ~/.cursor/  (agent rules and skills)
+dot_cursor/forum/                      ~/.cursor/forum/  (Forum ticket defaults)
 dot_cursor/encrypted_..._mcp.json.age  ~/.cursor/mcp.json  (encrypted)
 private_Library/.../Cursor/            Cursor settings
 path · aliases · functions             sourced from ~/.zshrc
@@ -88,6 +90,7 @@ Then commit and push — ordinary git. Brewfile and macOS-defaults changes re-ru
 
 | Command | Does |
 | --- | --- |
+| `jira get\|create\|edit` | ENT / Forum Jira CLI. Tokens live in `~/.secrets`, not in any repo. |
 | `xc` | Open the workspace, project or package in the current directory |
 | `xcclean` | Delete DerivedData, after confirming how much it frees |
 | `sim` | Pick an iOS simulator with the arrow keys and boot it |
@@ -98,7 +101,7 @@ Then commit and push — ordinary git. Brewfile and macOS-defaults changes re-ru
 
 ## Secrets
 
-The age private key lives at `~/.config/chezmoi/key.txt`. It is backed up in Bitwarden and never committed.
+The age private key lives at `~/.config/chezmoi/key.txt`. It is backed up in Bitwarden and never committed. `~/.secrets` is age-encrypted in this repo (`encrypted_private_dot_secrets.age`) and sourced from `path`. Put tokens there (`JIRA_EMAIL`, `JIRA_TOKEN`, `JIRA_DOMAIN`, `NPM_TOKEN`) — never in a project `.env` that could be committed.
 
 ```bash
 chezmoi edit ~/.secrets          # decrypt → edit → re-encrypt → apply

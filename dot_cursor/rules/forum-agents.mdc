@@ -1,0 +1,44 @@
+---
+description: Forum-iOS agent entrypoint — read architecture docs before coding
+globs: Forum-iOS/**/*.swift,Forum-macOS/**/*.swift,docs/**/*.md,README.md
+alwaysApply: false
+---
+
+# Forum agents
+
+Before implementing in the forum-iOS checkout:
+
+1. README → `docs/architecture.md` → topic doc for the area
+2. Match existing MVC / singleton / delegate patterns; do not invent architecture
+3. Do not run `xcodebuild`, simulators, Fastlane, or other build/test commands — verify by reading code
+4. For Jira tickets, use the `implement-forum-ticket` skill (`jira get`; credentials in `~/.secrets`)
+
+## Invariants
+
+- **UIKit MVC** by default; table screens may use `GenericTableCellVM`. Do not introduce VIPER, Clean Architecture layers, or a DI container unless explicitly asked.
+- **Singletons** (`*.shared`) and `ApplicationService` registration in `AppDelegate` for cross-cutting services.
+- **Auth** is Auth0 Universal Login only (`Auth0Service`). Environments/hosts live in `Constants.swift` (`Server` / `Region`).
+- **Assets/strings/storyboards** via SwiftGen (`Asset`, `StoryboardScene`, `Files`); localized copy uses `i18n` (`L10n`).
+- **Live session**: prefer existing helpers (`SessionSocketEventHandler`, `SessionNavigationCoordinator`, `SessionToastPresenter`, `SessionMessageStore`) over growing `SessionVC` further. See `docs/session.md`.
+- **Do not build or run** this project (`xcodebuild`, simulators, Fastlane, `swift test`, etc.). Verify by reading code; ask the user to build/run.
+
+## Doc routing
+
+| When touching… | Read first |
+|----------------|------------|
+| `ViewControllers/Session/**`, `Models/Session/**` | `docs/session.md` |
+| `API/**`, `Socket/**` | `docs/networking.md` |
+| `Models/Audio/**`, `Services/Audio/**`, ASR paths | `docs/asr.md` |
+| TTS / `OutputController`, `AppleOutputDevice` | `docs/tts.md` |
+| Auth0, tokens, `Server` / `Region` | `docs/authentication.md` |
+| StoreKit / `StoreService` | `docs/in-app-purchases.md` |
+| Theme, colors, fonts | `docs/design.md` |
+| Debug menu, CI, Sonar, Fastlane, localization, signing | `docs/release-and-tooling.md` |
+
+## Ticket workflow
+
+- Skills/commands live in `~/.cursor/` (Dotfiles), not in the forum-iOS repo.
+- Fetch: `jira get <KEY>`
+- Branch: `feature/<KEY>-<kebab-summary>` from the agreed base (default `main`)
+- Create: `create-forum-ticket` skill → `jira create` (defaults in `~/.cursor/forum/ticket-preferences.json`)
+- Edit: `edit-forum-ticket` skill → `jira edit <KEY>`

@@ -10,7 +10,7 @@ description: >
 
 # QA Forum Android ticket
 
-1. Fetch the user's Jira tickets in `QA To Do` / `QA In Progress` (needs Forum-iOS or Android `.env`: `JIRA_EMAIL`, `JIRA_TOKEN`, `JIRA_DOMAIN`).
+1. Fetch the user's Jira tickets in `QA To Do` / `QA In Progress` (`jira get`; credentials in `~/.secrets`: `JIRA_EMAIL`, `JIRA_TOKEN`, `JIRA_DOMAIN`).
 2. Keep only tickets with PRs in `sorenson-eng/forum-android` (`gh search prs`).
 3. Ask which ticket to test.
 4. Exchange the firebase CLI's stored OAuth token for an access token; if stale, tell the user to run `firebase login` and stop.

@@ -1,0 +1,13 @@
+---
+description: REST APIRequest stack and ForumSocket conventions
+globs: Forum-iOS/Classes/API/**/*.swift,Forum-iOS/Classes/Socket/**/*.swift
+alwaysApply: false
+---
+
+# Networking
+
+In the forum-iOS checkout, read `docs/networking.md` before changing REST or Socket code.
+
+- New REST endpoints: `APIRequest` value types under `API/Forum/Requests/`, send via `ForumAPIClient.shared`
+- Realtime: `ForumSocket` + `EventIdentifiable` / `SocketOutgoingEvent`; fan-out via delegates
+- Live-room socket side effects belong in `SessionSocketEventHandler` (see `docs/session.md`), not duplicated in `ForumSocket`

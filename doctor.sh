@@ -230,6 +230,28 @@ else
     bad "age key is missing" "encrypted files won't apply — copy it from Bitwarden"
 fi
 
+_secrets="$HOME/.secrets"
+if [ -s "$_secrets" ]; then
+    _jira_keys=0
+    grep -q 'JIRA_EMAIL=' "$_secrets" && _jira_keys=$((_jira_keys + 1))
+    grep -q 'JIRA_TOKEN=' "$_secrets" && _jira_keys=$((_jira_keys + 1))
+    grep -q 'JIRA_DOMAIN=' "$_secrets" && _jira_keys=$((_jira_keys + 1))
+    if [ "$_jira_keys" -eq 3 ]; then
+        ok "Jira credentials  ~/.secrets"
+    else
+        bad "Jira credentials incomplete in ~/.secrets" \
+            "chezmoi edit ~/.secrets — need JIRA_EMAIL, JIRA_TOKEN, JIRA_DOMAIN"
+    fi
+else
+    bad "~/.secrets is missing" "need the age key, then chezmoi apply --source $DOTFILES_DIR"
+fi
+
+if [ -x "$HOME/.local/bin/jira" ]; then
+    ok "jira  ~/.local/bin/jira"
+else
+    bad "jira CLI is missing" "chezmoi apply --source $DOTFILES_DIR ~/.local/bin/jira"
+fi
+
 if command -v chezmoi >/dev/null 2>&1; then
     _chez_ver="$(cli_ver chezmoi)"
     _status="$(chezmoi status --source "$DOTFILES_DIR" 2>/dev/null)"

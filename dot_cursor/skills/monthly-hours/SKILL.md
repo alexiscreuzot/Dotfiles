@@ -49,4 +49,4 @@ Scripts live under `~/.cursor/monthly-hours/` (managed by chezmoi). `config.json
 | `month_work.py YYYY-MM` | Git commits + Jira tickets |
 | `report.py YYYY-MM [--ics FILE]` | Classification + timesheet lines |
 
-Jira credentials come from `forum-iOS/.env` (`jiraEnvPath` in config).
+Jira credentials come from `~/.secrets` (`JIRA_EMAIL`, `JIRA_TOKEN`, `JIRA_DOMAIN`). Do not read them from a project `.env`.

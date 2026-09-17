@@ -1,0 +1,13 @@
+---
+description: ASR and TTS pipeline boundaries
+globs: Forum-iOS/Classes/Models/Audio/**/*.swift,Forum-iOS/Classes/Services/Audio/**/*.swift,Forum-iOS/Classes/Services/AudioService.swift
+alwaysApply: false
+---
+
+# ASR / TTS
+
+In the forum-iOS checkout, read `docs/asr.md` and/or `docs/tts.md` before changing the pipelines. Session ownership is in `docs/session.md`.
+
+- ASR path: `AudioController` → `AWSInputDevice` → `InputController` → session UI via delegates
+- TTS path: socket `"tts"` → `SessionSocketEventHandler` → `SessionVC.playTTS` → `OutputController` / `AppleOutputDevice`
+- Keep credentials, PCM chunking, and auto-resume inside the audio models/services; keep room UI in `SessionVC` extensions

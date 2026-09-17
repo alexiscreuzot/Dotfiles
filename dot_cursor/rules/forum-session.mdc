@@ -1,0 +1,15 @@
+---
+description: Live session VC collaborators and where to put changes
+globs: Forum-iOS/Classes/ViewControllers/Session/**/*.swift,Forum-iOS/Classes/Models/Session/**/*.swift
+alwaysApply: false
+---
+
+# Session layer
+
+In the forum-iOS checkout, read `docs/session.md` before changing live-room code.
+
+- Socket side effects → `SessionSocketEventHandler` (+ owner protocol hooks if needed)
+- Sheets/modals → `SessionNavigationCoordinator`
+- Toasts → `SessionToastPresenter`
+- Transcript mutations for collaborators → `SessionMessageStore` (not full `MessagesVC`)
+- Prefer extending these helpers over growing `SessionVC` further
