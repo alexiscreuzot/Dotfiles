@@ -44,16 +44,42 @@ Reports what is off and changes nothing. It checks tooling, GitHub, both repos, 
 
 ## Your private repo
 
-If `<your GitHub user>/Dotfiles-private` exists, apply clones it to `~/.dotfiles-private` and applies it too. Otherwise it is skipped. Anything personal goes there:
+Anything you don't want public goes in a second chezmoi repo: secrets, work config, your own apps and Dock. Create `<your GitHub user>/Dotfiles-private` and apply picks it up. It clones the repo to `~/.dotfiles-private` and applies it as its own chezmoi source, right after the public one. `dots` and `dots doctor` cover it from then on.
 
-- `dot_zshrc.private` for shell additions
-- `Brewfile`, plus a run script that calls `~/.dotfiles/scripts/brew-bundle.sh`
-- a macOS defaults run script for your Dock and apps
-- `symlink_` entries for editor settings and agent skills
-- `doctor.sh` for extra `dots doctor` checks
-- `.chezmoi.toml.tmpl` with age encryption, for secrets such as `~/.secrets`
+If the repo doesn't exist, can't be reached, or you declined it at install, apply skips it and carries on. Run `chezmoi init --prompt` to change your answer.
 
-Edit private files with `pchezmoi`, for example `pchezmoi edit ~/.secrets`.
+| File | Does |
+| --- | --- |
+| `.chezmoi.toml.tmpl` | Turns on age encryption with the key from install |
+| `encrypted_private_dot_secrets.age` | Decrypts to `~/.secrets` |
+| `dot_zshrc.private` | Sourced by `~/.zshrc`, after the public aliases and functions |
+| `Brewfile` | Your apps, installed on top of the public Brewfile |
+| `run_onchange_before_10-brew-bundle.sh.tmpl` | Installs that Brewfile whenever it changes |
+| `run_onchange_after_30-macos-defaults.sh` | Your Dock and app defaults |
+| `symlink_*.tmpl` | Links editor settings and agent skills to files kept in the repo |
+| `doctor.sh` | Extra checks, sourced by `dots doctor` with its `ok`, `warn`, and `bad` helpers |
+| `.chezmoiignore` | Keeps `Brewfile`, `doctor.sh`, and other repo-only files out of `~` |
+
+Two of these need exact contents. The config points at the repo and the age key that install saved:
+
+```toml
+sourceDir = "{{ .chezmoi.homeDir }}/.dotfiles-private"
+encryption = "age"
+
+[age]
+    identity = "{{ .chezmoi.homeDir }}/.config/chezmoi/key.txt"
+    recipient = "age1…"
+```
+
+The Brewfile script reuses the public installer. The hash comment is what makes it re-run when the Brewfile changes:
+
+```bash
+#!/bin/bash
+# Brewfile hash: {{ include "Brewfile" | sha256sum }}
+exec bash "$HOME/.dotfiles/scripts/brew-bundle.sh" "{{ .chezmoi.sourceDir }}/Brewfile"
+```
+
+`pchezmoi` is chezmoi pointed at the private repo, so every chezmoi command works through it. Use `pchezmoi edit ~/.secrets` to change a secret, and `pchezmoi add --encrypt <file>` to add a new one.
 
 ## Layout
 
