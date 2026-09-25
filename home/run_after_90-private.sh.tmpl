@@ -8,8 +8,10 @@ exit 0
 
 REPO="git@github.com:{{ .github_user }}/Dotfiles-private.git"
 SRC="$HOME/.dotfiles-private"
-CFG="$HOME/.config/chezmoi-private/chezmoi.toml"
-STATE="$HOME/.config/chezmoi-private/chezmoistate.boltdb"
+CFG_DIR="$HOME/.config/chezmoi-private"
+CFG="$CFG_DIR/chezmoi.toml"
+STATE="$CFG_DIR/chezmoistate.boltdb"
+KEY="$HOME/.config/chezmoi/key.txt"
 
 if [ ! -d "$SRC/.git" ]; then
     if [ -e "$SRC" ]; then
@@ -27,11 +29,52 @@ if [ ! -d "$SRC/.git" ]; then
 fi
 
 if [ ! -f "$CFG" ]; then
-    mkdir -p "$(dirname "$CFG")"
-    if ! chezmoi init --source "$SRC" --config-path "$CFG" --persistent-state "$STATE"; then
-        echo "warning: private chezmoi init failed"
-        exit 0
+    mkdir -p "$CFG_DIR"
+    if [ -f "$SRC/.chezmoi.toml.tmpl" ]; then
+        if ! chezmoi init --source "$SRC" --config-path "$CFG" --persistent-state "$STATE"; then
+            echo "warning: private chezmoi init failed"
+            exit 0
+        fi
+    elif [ -s "$KEY" ]; then
+        _recipient="$(age-keygen -y "$KEY" 2>/dev/null || true)"
+        if [ -z "$_recipient" ]; then
+            echo "warning: could not read the age key — private config skipped"
+        else
+            cat > "$CFG" <<EOF
+encryption = "age"
+
+[edit]
+    command = "zed"
+    args = ["--wait"]
+
+[age]
+    identity = "$KEY"
+    recipient = "$_recipient"
+EOF
+        fi
     fi
+fi
+
+# A Brewfile in the private repo installs on top of the public one.
+# The hash file is what makes this re-run when the Brewfile changes.
+if [ -f "$SRC/Brewfile" ]; then
+    _hash="$(shasum -a 256 "$SRC/Brewfile" | awk '{print $1}')"
+    _hashfile="$CFG_DIR/Brewfile.sha256"
+    _prev=""
+    [ -f "$_hashfile" ] && _prev="$(cat "$_hashfile")"
+    if [ "$_hash" != "$_prev" ]; then
+        mkdir -p "$CFG_DIR"
+        if bash "$HOME/.dotfiles/scripts/brew-bundle.sh" "$SRC/Brewfile"; then
+            printf '%s\n' "$_hash" > "$_hashfile"
+        else
+            echo "warning: private Brewfile install failed"
+        fi
+    fi
+fi
+
+if [ ! -f "$CFG" ]; then
+    echo "private chezmoi config missing — apply skipped until the age key is in place"
+    exit 0
 fi
 
 if [ "${CHEZMOI_COMMAND:-}" = "update" ]; then
