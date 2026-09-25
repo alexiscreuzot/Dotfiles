@@ -330,21 +330,6 @@ else
     fi
 fi
 
-if github_ssh_ok || [ -d "$DOTFILES_DIR/.git" ]; then
-    ui_ok "GitHub already set up — skipping the Bitwarden sign-in pause"
-elif app_ok Bitwarden; then
-    if ui_ask \
-        "Sign in to Bitwarden, then enable its Safari extension (needed only if we open GitHub next)." \
-        "Safari → Settings → Extensions → Bitwarden" \
-        "Open Bitwarden" "Skip"; then
-        open -a Bitwarden 2>/dev/null || true
-    else
-        ui_info "skipped"
-    fi
-else
-    ui_info "Bitwarden isn't available — GitHub login will be manual if needed"
-fi
-
 ui_step "GitHub SSH"
 if github_ssh_ok; then
     ui_ok "already authenticated"
@@ -368,8 +353,8 @@ else
                 ui_info "key may already be on GitHub — that's fine"
             fi
         else
-            ui_info "opening Safari for GitHub login (Bitwarden can fill it)"
-            BROWSER=safari gh auth login \
+            ui_info "one browser approval signs in and uploads an SSH key"
+            gh auth login \
                 --hostname github.com \
                 --git-protocol ssh \
                 --web \

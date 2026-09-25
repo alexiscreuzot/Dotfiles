@@ -12,7 +12,7 @@
 	insteadOf = https://github.com/
 [credential "https://origin.cursor.com/git"]
 	helper = 
-	helper = !/Users/acreuzot/.local/bin/origin credential-helper
+	helper = !{{ .chezmoi.homeDir }}/.local/bin/origin credential-helper
 [credential "https://origin.cursor.com"]
 	helper = 
-	helper = !/Users/acreuzot/.local/bin/origin credential-helper
+	helper = !{{ .chezmoi.homeDir }}/.local/bin/origin credential-helper

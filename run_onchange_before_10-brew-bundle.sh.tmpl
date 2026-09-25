@@ -28,6 +28,18 @@ done <<EOF
 $(awk -F'"' '/^tap / { print $2, $4 }' "$_brewfile")
 EOF
 
+{{ if eq .apps false }}
+# GUI apps were declined at first run. chezmoi init --prompt to change that.
+while IFS= read -r _cask; do
+    [ -n "$_cask" ] || continue
+    HOMEBREW_BUNDLE_CASK_SKIP="${HOMEBREW_BUNDLE_CASK_SKIP:+$HOMEBREW_BUNDLE_CASK_SKIP }$_cask"
+done <<EOF
+$(awk '$1 == "cask" { name = $2; gsub(/"/, "", name); sub(/,.*/, "", name); n = split(name, a, "/"); print a[n] }' "$_brewfile")
+EOF
+export HOMEBREW_BUNDLE_CASK_SKIP
+echo "skipping GUI apps"
+{{ end }}
+
 # Skip casks whose app, payload, or leftover helper is already on disk.
 # brew bundle would otherwise try to reinstall them (and hang on pkg
 # installers).

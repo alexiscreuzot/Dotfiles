@@ -1,5 +1,14 @@
 sourceDir = "{{ .chezmoi.homeDir }}/Developer/Dotfiles"
 
+{{- $apps := promptBoolOnce . "apps" "Install GUI apps from the Brewfile" true }}
+{{- $macos := promptBoolOnce . "macos" "Apply macOS defaults (Finder, keyboard, Dock)" true }}
+{{- $private := promptBoolOnce . "private" "Set up the private dotfiles (agents, secrets, router)" true }}
+
 [edit]
     command = "zed"
     args = ["--wait"]
+
+[data]
+    apps = {{ $apps }}
+    macos = {{ $macos }}
+    private = {{ $private }}

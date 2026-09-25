@@ -10,5 +10,9 @@ functions
 path
 .gitignore
 
+# Raw Cursor settings. Chezmoi only manages the symlinks that point here.
+cursor
+cursor/**
+
 .DS_Store
 **/.DS_Store

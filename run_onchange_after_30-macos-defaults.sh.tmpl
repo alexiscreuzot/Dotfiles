@@ -1,6 +1,10 @@
 #!/bin/bash
 # macOS system preferences. Edit this file to taste; chezmoi re-runs it
 # automatically whenever its contents change.
+{{ if eq .macos false }}
+echo "skipping macOS defaults — chezmoi init --prompt to change this"
+exit 0
+{{ end }}
 
 # --- Finder ---
 defaults write com.apple.finder AppleShowAllFiles -bool false

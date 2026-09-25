@@ -24,12 +24,12 @@ A fresh Mac installs the toolchain, signs in to GitHub over SSH, and applies eve
 
 ```text
 dot_zshrc                              ~/.zshrc
-dot_gitconfig                          ~/.gitconfig
+dot_gitconfig.tmpl                    ~/.gitconfig
 dot_tmux.conf                          ~/.tmux.conf
 dot_tool-versions                      ~/.tool-versions
 private_dot_ssh/config                 ~/.ssh/config
 dot_config/gh/                         ~/.config/gh/
-private_Library/.../Cursor/            Cursor settings
+cursor/                                Cursor settings and keybindings (symlinked)
 path · aliases · functions             sourced from ~/.zshrc
 Brewfile                               formulae, casks
 ```
@@ -43,7 +43,9 @@ Scripts that run as part of `chezmoi apply`:
 | Brewfile changes | `run_onchange_before_10-brew-bundle.sh.tmpl` | `brew bundle` |
 | First apply / script changes | `run_once_after_20-oh-my-zsh.sh` | Install oh-my-zsh and link the Spaceship theme |
 | Script changes | `run_onchange_after_30-macos-defaults.sh.tmpl` | Finder, keyboard, default apps, SuperCmd, screenshots, Dock pins |
-| Every apply | `run_after_90-private.sh` | Clone and apply [Dotfiles-private](https://github.com/alexiscreuzot/Dotfiles-private) |
+| Every apply | `run_after_90-private.sh.tmpl` | Clone and apply [Dotfiles-private](https://github.com/alexiscreuzot/Dotfiles-private) |
+
+The first `chezmoi init` asks three questions and remembers the answers: install GUI apps, apply macOS defaults, set up the private repo. `chezmoi init --prompt` asks again.
 
 ```mermaid
 flowchart LR
@@ -66,16 +68,20 @@ This directory **is** the chezmoi source. `dot_zshrc` becomes `~/.zshrc`, `dot_c
 
 ## Day to day
 
+`dots` syncs both repos: it pulls local edits back in, asks before committing, pulls, applies, and pushes.
+
+```bash
+dots            # sync
+dots doctor     # same report as doctor
+```
+
+Skills, rules, and commands are symlinks into the private repo, so a new file there is already committed by the next `dots`. Cursor settings are a symlink into `cursor/` in this repo. Templates (Zed settings, `~/.gitconfig`) still need a hand edit; `dots` lists those when `re-add` cannot update them.
+
 | | Command |
 | --- | --- |
-| Edit a managed file | `chezmoi edit ~/.zshrc` |
-| Pull live edits back into the repo | `chezmoi re-add` |
-| Preview | `chezmoi diff` |
-| Apply | `chezmoi apply` |
-| Start managing something new | `chezmoi add ~/.foo` |
-| Check the machine | `doctor` |
-
-Then commit and push — ordinary git. Brewfile and macOS-defaults changes re-run on the next `apply`. The private repo has the same commands under `pchezmoi`.
+| Check the machine | `doctor` or `dots doctor` |
+| One-off apply | `chezmoi apply` |
+| Change the first-run choices | `chezmoi init --prompt` |
 
 ---
 
@@ -83,7 +89,7 @@ Then commit and push — ordinary git. Brewfile and macOS-defaults changes re-ru
 
 [Dotfiles-private](https://github.com/alexiscreuzot/Dotfiles-private) is a second chezmoi source, checked out at `~/Developer/alexiscreuzot/Dotfiles-private`. `run_after_90-private.sh` clones it on apply when it is missing, then applies it. Its config and state are `~/.config/chezmoi-private/`, so it does not share a lock with this repo. Without access to that repo, the apply warns and continues.
 
-It holds `~/.secrets`, Cursor rules, skills and commands, Zed's agent config, the Jev router, and the invoice tooling. `~/.zshrc` sources `~/.zshrc.private` from there (`pchezmoi`, the `jev-*` aliases).
+It holds `~/.secrets`, Zed's agent config, the Jev router, and the invoice tooling. Rules, skills, and commands live in its `agents/` folder and are symlinked into `~/.cursor` and `~/.agents`. `~/.zshrc` sources `~/.zshrc.private` from there (`pchezmoi`, the `jev-*` aliases).
 
 `doctor` walks the toolchain, GitHub SSH, the age key, chezmoi drift, the editors and agent config, the Jev router, the login shell, the Brewfile and `~/.tool-versions`, then reports what is off. It never changes anything.
 

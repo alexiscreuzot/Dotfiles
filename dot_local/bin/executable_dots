@@ -1,0 +1,128 @@
+#!/bin/bash
+# Pull, apply, and push both dotfiles repos. Pass "doctor" to only report.
+set -u
+
+DOTFILES_DIR="$HOME/Developer/alexiscreuzot/Dotfiles"
+PRIV_DIR="$HOME/Developer/alexiscreuzot/Dotfiles-private"
+PRIV_CFG="$HOME/.config/chezmoi-private/chezmoi.toml"
+PRIV_STATE="$HOME/.config/chezmoi-private/chezmoistate.boltdb"
+
+# shellcheck source=../../../ui.sh
+. "$DOTFILES_DIR/ui.sh"
+
+pchez() {
+    chezmoi --config "$PRIV_CFG" --persistent-state "$PRIV_STATE" --source "$PRIV_DIR" "$@"
+}
+
+if [ "${1:-}" = "doctor" ]; then
+    exec bash "$DOTFILES_DIR/doctor.sh"
+fi
+
+_commit_repo() {
+    _dir="$1"
+    _label="$2"
+    if [ ! -d "$_dir/.git" ]; then
+        ui_warn "$_label is not checked out"
+        return 0
+    fi
+    if [ -z "$(git -C "$_dir" status --porcelain)" ]; then
+        ui_ok "$_label  nothing to commit"
+        return 0
+    fi
+    ui_info "$_label  local changes"
+    git -C "$_dir" status --short | while read -r _line; do
+        ui_note "$_line"
+    done
+    if ui_ask "Commit $_label?" "message: Sync from $(hostname -s)" "Commit" "Skip"; then
+        git -C "$_dir" add -A
+        if git -C "$_dir" commit -m "Sync from $(hostname -s)"; then
+            ui_ok "$_label  committed"
+        else
+            ui_warn "$_label  commit failed"
+            return 1
+        fi
+    else
+        ui_info "$_label  left uncommitted"
+    fi
+}
+
+_pull_repo() {
+    _dir="$1"
+    _label="$2"
+    [ -d "$_dir/.git" ] || return 0
+    if git -C "$_dir" pull --rebase --autostash; then
+        ui_ok "$_label  pulled"
+    else
+        ui_fail "$_label  pull stopped on a conflict"
+        ui_note "fix it in $_dir, then run dots again"
+        return 1
+    fi
+}
+
+_push_repo() {
+    _dir="$1"
+    _label="$2"
+    [ -d "$_dir/.git" ] || return 0
+    _ahead="$(git -C "$_dir" rev-list --count '@{u}..HEAD' 2>/dev/null || echo 0)"
+    if [ "${_ahead:-0}" -eq 0 ]; then
+        ui_ok "$_label  nothing to push"
+        return 0
+    fi
+    if git -C "$_dir" push; then
+        ui_ok "$_label  pushed"
+    else
+        ui_warn "$_label  push failed"
+    fi
+}
+
+printf '\n'
+printf '  %sdots%s\n' "$C_BOLD" "$C_RESET"
+printf '  %spull, apply, and push both repos%s\n' "$C_DIM" "$C_RESET"
+
+ui_step() { :; }
+
+printf '\n'
+printf '  %s───%s  %scapture%s\n' "$C_DIM" "$C_RESET" "$C_BOLD" "$C_RESET"
+chezmoi re-add --source "$DOTFILES_DIR" || ui_warn "public re-add reported an error"
+if [ -f "$PRIV_CFG" ]; then
+    pchez re-add || ui_warn "private re-add reported an error"
+fi
+
+_left="$(chezmoi status --source "$DOTFILES_DIR" 2>/dev/null | grep -v '^R ' || true)"
+if [ -f "$PRIV_CFG" ]; then
+    _pleft="$(pchez status 2>/dev/null | grep -v '^R ' || true)"
+else
+    _pleft=""
+fi
+if [ -n "$_left$_pleft" ]; then
+    ui_warn "these still differ, and re-add will not overwrite a template"
+    printf '%s\n' "$_left" "$_pleft" | grep -v '^$' | while read -r _line; do
+        ui_note "$_line"
+    done
+    ui_note "edit the .tmpl in the repo, then run dots again"
+fi
+
+printf '\n'
+printf '  %s───%s  %scommit%s\n' "$C_DIM" "$C_RESET" "$C_BOLD" "$C_RESET"
+_commit_repo "$DOTFILES_DIR" "public" || exit 1
+_commit_repo "$PRIV_DIR" "private" || exit 1
+
+printf '\n'
+printf '  %s───%s  %spull%s\n' "$C_DIM" "$C_RESET" "$C_BOLD" "$C_RESET"
+_pull_repo "$DOTFILES_DIR" "public" || exit 1
+_pull_repo "$PRIV_DIR" "private" || exit 1
+
+printf '\n'
+printf '  %s───%s  %sapply%s\n' "$C_DIM" "$C_RESET" "$C_BOLD" "$C_RESET"
+if chezmoi apply --source "$DOTFILES_DIR"; then
+    ui_ok "applied"
+else
+    ui_warn "apply reported errors"
+fi
+
+printf '\n'
+printf '  %s───%s  %spush%s\n' "$C_DIM" "$C_RESET" "$C_BOLD" "$C_RESET"
+_push_repo "$DOTFILES_DIR" "public"
+_push_repo "$PRIV_DIR" "private"
+
+printf '\n'

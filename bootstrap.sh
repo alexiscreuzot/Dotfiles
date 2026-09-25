@@ -35,7 +35,23 @@ keep_sudo
 reclaim_if_foreign "$HOME/.oh-my-zsh"
 reclaim_if_foreign "$HOME/.config/chezmoi"
 
+_cfg="$HOME/.config/chezmoi/chezmoi.toml"
+_src="$(chezmoi source-path 2>/dev/null || true)"
+if ! { [ -d "$_src" ] && [ -f "$_src/.chezmoi.toml.tmpl" ]; }; then
+    ui_info "first run — three choices, remembered after this"
+    chezmoi init --source "$DOTFILES_DIR" || ui_warn "chezmoi init did not finish"
+fi
+
+_want_private=1
+if [ -f "$_cfg" ] && grep -Eq '^[[:space:]]*private[[:space:]]*=[[:space:]]*false' "$_cfg"; then
+    _want_private=0
+fi
+
 ui_step "age private key"
+if [ "$_want_private" -eq 0 ]; then
+    ui_info "skipped — private dotfiles were declined"
+    ui_note "chezmoi init --prompt  to turn them on"
+else
 _age_key="$HOME/.config/chezmoi/key.txt"
 if [ -s "$_age_key" ]; then
     ui_ok "already in place  $_age_key"
@@ -96,6 +112,7 @@ else
     if [ -f "$_age_key" ]; then
         chmod 600 "$_age_key"
     fi
+fi
 fi
 
 ui_step "Apply"
