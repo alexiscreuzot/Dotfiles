@@ -7,15 +7,15 @@ PRIV_DIR="$HOME/.dotfiles-private"
 PRIV_CFG="$HOME/.config/chezmoi-private/chezmoi.toml"
 PRIV_STATE="$HOME/.config/chezmoi-private/chezmoistate.boltdb"
 
-# shellcheck source=../../../ui.sh
-. "$DOTFILES_DIR/ui.sh"
+# shellcheck source=../../../scripts/ui.sh
+. "$DOTFILES_DIR/scripts/ui.sh"
 
 pchez() {
     chezmoi --config "$PRIV_CFG" --persistent-state "$PRIV_STATE" --source "$PRIV_DIR" "$@"
 }
 
 if [ "${1:-}" = "doctor" ]; then
-    exec bash "$DOTFILES_DIR/doctor.sh"
+    exec bash "$DOTFILES_DIR/scripts/doctor.sh"
 fi
 
 _public_readonly() {

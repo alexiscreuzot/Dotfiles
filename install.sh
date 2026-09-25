@@ -399,7 +399,7 @@ if [ -d "$DOTFILES_DIR/.git" ]; then
     fi
 elif [ -d "$DOTFILES_DIR" ]; then
     ui_warn "$DOTFILES_DIR exists but is not a git repo"
-    if [ -x "$DOTFILES_DIR/bootstrap.sh" ]; then
+    if [ -x "$DOTFILES_DIR/scripts/bootstrap.sh" ]; then
         ui_info "bootstrap.sh is there — continuing"
     else
         ui_fail "no bootstrap.sh in that folder — move it aside and re-run"
@@ -428,6 +428,6 @@ if gh_logged_in; then
 fi
 
 export DOTFILES_STEPS DOTFILES_STEP DOTFILES_FROM_INSTALL=1
-exec "$DOTFILES_DIR/bootstrap.sh"
+exec "$DOTFILES_DIR/scripts/bootstrap.sh"
 }
 main "$@"

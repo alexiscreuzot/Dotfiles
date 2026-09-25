@@ -16,24 +16,7 @@ chezmoi · zsh · Homebrew · age
 2. Approve GitHub in the browser. Confirm your name and email.
 3. Pick apps, macOS defaults, and private repo. Paste the age key if private is on.
 
-```mermaid
-flowchart TD
-  tools["Tools
-  Xcode CLT, then Homebrew
-  git, gh, chezmoi, age, and Bitwarden"]
-  github["GitHub
-  One browser approval
-  gh creates the SSH key and uploads it"]
-  clone["Clone
-  ~/.dotfiles"]
-  choices["Choices
-  GUI apps, macOS defaults, private repo
-  Age key paste only if private is on"]
-  apply["Apply
-  Dotfiles, Brewfile, oh-my-zsh, defaults
-  then the private repo"]
-  tools --> github --> clone --> choices --> apply
-```
+![install flow](assets/install.svg)
 
 ## dots
 
@@ -83,21 +66,28 @@ Any chezmoi source tree works. Optional pieces:
 
 Tokens live in `~/.secrets`, never in a project `.env`. `pchezmoi edit ~/.secrets` decrypts, edits, and re-encrypts.
 
-## What gets applied
+## Layout
 
 ```text
-dot_zshrc                 ~/.zshrc
-dot_gitconfig.tmpl        ~/.gitconfig
-dot_tmux.conf             ~/.tmux.conf
-dot_tool-versions         ~/.tool-versions
-private_dot_ssh/config    ~/.ssh/config
-dot_config/gh/            ~/.config/gh/
-cursor/                   Cursor settings and keybindings (symlinked)
-path · aliases · functions
-Brewfile                  formulae, and casks unless you skip apps
+install.sh                  the one-liner
+home/                       what chezmoi applies to ~
+  dot_zshrc                 ~/.zshrc
+  dot_gitconfig.tmpl        ~/.gitconfig
+  dot_tmux.conf             ~/.tmux.conf
+  dot_tool-versions         ~/.tool-versions
+  dot_local/bin/            dots
+  private_dot_ssh/config    ~/.ssh/config
+  dot_config/gh/            ~/.config/gh/
+  run_*                     brew bundle, oh-my-zsh, macOS defaults, private repo
+config/                     read in place, never copied
+  Brewfile                  formulae, and casks unless you skip apps
+  cursor/                   Cursor settings and keybindings (symlinked)
+  path · aliases · functions
+scripts/                    bootstrap, doctor, shared terminal UI
+assets/                     README images
 ```
 
-`dot_` becomes a dotfile, `private_` locks the file down. Apply also installs oh-my-zsh, runs `brew bundle` when the Brewfile changes, and sets macOS defaults when that script changes. The Brewfile, macOS defaults, and Cursor settings are the shared base. Fork the repo if you want your own.
+In `home/`, `dot_` becomes a dotfile, `private_` locks the file down. Apply also installs oh-my-zsh, runs `brew bundle` when the Brewfile changes, and sets macOS defaults when that script changes. The Brewfile, macOS defaults, and Cursor settings are the shared base. Fork the repo if you want your own.
 
 ## Shell
 

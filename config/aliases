@@ -3,7 +3,7 @@
 
 # Shortcuts
 alias dev="cd ~/Developer/"
-alias doctor="~/.dotfiles/doctor.sh"
+alias doctor="~/.dotfiles/scripts/doctor.sh"
 alias g="git"
 alias h="history"
 alias j="jobs"

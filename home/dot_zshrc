@@ -4,7 +4,7 @@ ZSH_THEME="spaceship"
 plugins=(git)
 [ -f "$ZSH/oh-my-zsh.sh" ] && source "$ZSH/oh-my-zsh.sh"
 
-for file in ~/.dotfiles/{path,aliases,functions}; do
+for file in ~/.dotfiles/config/{path,aliases,functions}; do
     [ -r "$file" ] && [ -f "$file" ] && source "$file";
 done;
 unset file;

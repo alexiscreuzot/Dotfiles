@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="390" viewBox="0 0 860 390" role="img" aria-label="Install flow: tools, GitHub approval, clone, choices, and apply">
+  <rect width="860" height="390" rx="12" fill="#0d1117" stroke="#30363d"/>
+  <circle cx="24" cy="22" r="6" fill="#ff5f57"/>
+  <circle cx="44" cy="22" r="6" fill="#febc2e"/>
+  <circle cx="64" cy="22" r="6" fill="#28c840"/>
+  <text x="88" y="27" fill="#8b949e" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13">install</text>
+
+  <text x="28" y="68" fill="#e6edf3" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="15" font-weight="650">from a clean Mac to a working one</text>
+  <text x="28" y="91" fill="#8b949e" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13">one command · one browser approval · a few choices</text>
+
+  <g stroke="#30363d" stroke-width="2" fill="none">
+    <path d="M174 190h28"/>
+    <path d="M338 190h28"/>
+    <path d="M502 190h28"/>
+    <path d="M666 190h28"/>
+  </g>
+  <g fill="#8b949e">
+    <path d="m198 184 10 6-10 6z"/>
+    <path d="m362 184 10 6-10 6z"/>
+    <path d="m526 184 10 6-10 6z"/>
+    <path d="m690 184 10 6-10 6z"/>
+  </g>
+
+  <g fill="#161b22" stroke="#30363d">
+    <rect x="28" y="128" width="146" height="124" rx="8"/>
+    <rect x="202" y="128" width="136" height="124" rx="8"/>
+    <rect x="366" y="128" width="136" height="124" rx="8"/>
+    <rect x="530" y="128" width="136" height="124" rx="8"/>
+    <rect x="694" y="128" width="138" height="124" rx="8"/>
+  </g>
+
+  <g fill="#3fb950" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12" font-weight="650">
+    <text x="44" y="157">01  TOOLS</text>
+    <text x="218" y="157">02  GITHUB</text>
+    <text x="382" y="157">03  CLONE</text>
+    <text x="546" y="157">04  CHOICES</text>
+    <text x="710" y="157">05  APPLY</text>
+  </g>
+
+  <g fill="#e6edf3" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13">
+    <text x="44" y="184">Xcode CLT</text>
+    <text x="44" y="204">Homebrew</text>
+    <text x="44" y="224">git · gh · age</text>
+
+    <text x="218" y="184">approve once</text>
+    <text x="218" y="204">SSH key</text>
+    <text x="218" y="224">name + email</text>
+
+    <text x="382" y="184">~/.dotfiles</text>
+    <text x="382" y="204">chezmoi</text>
+    <text x="382" y="224">gets the repo</text>
+
+    <text x="546" y="184">apps</text>
+    <text x="546" y="204">macOS defaults</text>
+    <text x="546" y="224">private repo</text>
+
+    <text x="710" y="184">dotfiles</text>
+    <text x="710" y="204">Brewfile</text>
+    <text x="710" y="224">oh-my-zsh + defaults</text>
+  </g>
+
+  <rect x="28" y="292" width="804" height="52" rx="8" fill="#161b22" stroke="#30363d"/>
+  <text x="48" y="324" fill="#3fb950" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="16">$</text>
+  <text x="72" y="324" fill="#e6edf3" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="16">curl -fsSL alexiscreuzot.com/dots | sh</text>
+  <rect x="438" y="308" width="9" height="19" rx="1" fill="#79c0ff"/>
+</svg>

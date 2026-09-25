@@ -1,9 +1,9 @@
 #!/bin/bash
 # Re-runs whenever the Brewfile changes.
-# Brewfile hash: {{ include "Brewfile" | sha256sum }}
+# Brewfile hash: {{ include (joinPath .chezmoi.workingTree "config/Brewfile") | sha256sum }}
 
-_src="{{ .chezmoi.sourceDir }}"
-_brewfile="$_src/Brewfile"
+_repo="{{ .chezmoi.workingTree }}"
+_brewfile="$_repo/config/Brewfile"
 
 if ! command -v brew >/dev/null 2>&1; then
     echo "Homebrew not found, skipping brew bundle"
@@ -43,8 +43,8 @@ echo "skipping GUI apps"
 # Skip casks whose app, payload, or leftover helper is already on disk.
 # brew bundle would otherwise try to reinstall them (and hang on pkg
 # installers).
-if [ -f "$_src/cask-present.py" ]; then
-    _skip="$(python3 "$_src/cask-present.py" --skip --brewfile "$_brewfile" || true)"
+if [ -f "$_repo/scripts/cask-present.py" ]; then
+    _skip="$(python3 "$_repo/scripts/cask-present.py" --skip --brewfile "$_brewfile" || true)"
     if [ -n "$_skip" ]; then
         HOMEBREW_BUNDLE_CASK_SKIP="${HOMEBREW_BUNDLE_CASK_SKIP:+$HOMEBREW_BUNDLE_CASK_SKIP }$_skip"
         export HOMEBREW_BUNDLE_CASK_SKIP

@@ -2,7 +2,7 @@
 # Post-clone apply. Run install.sh on a fresh Mac; this script is invoked from there.
 set -e
 
-DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
+DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")/.." && pwd)"
 
 if [ -z "${DOTFILES_FROM_INSTALL:-}" ]; then
     DOTFILES_STEPS=3
@@ -10,7 +10,7 @@ if [ -z "${DOTFILES_FROM_INSTALL:-}" ]; then
 fi
 
 # shellcheck source=ui.sh
-. "$DOTFILES_DIR/ui.sh"
+. "$DOTFILES_DIR/scripts/ui.sh"
 
 load_brew || true
 
@@ -155,15 +155,15 @@ fi
 
 _frag_ok=1
 for _frag in path aliases functions; do
-    if [ -f "$DOTFILES_DIR/$_frag" ]; then
-        ui_ok "$_frag  $DOTFILES_DIR/$_frag"
+    if [ -f "$DOTFILES_DIR/config/$_frag" ]; then
+        ui_ok "$_frag  $DOTFILES_DIR/config/$_frag"
     else
-        ui_fail "$_frag  missing from $DOTFILES_DIR"
+        ui_fail "$_frag  missing from $DOTFILES_DIR/config"
         _frag_ok=0
     fi
 done
 
-bash "$DOTFILES_DIR/run_once_after_20-oh-my-zsh.sh" || true
+bash "$DOTFILES_DIR/home/run_once_after_20-oh-my-zsh.sh" || true
 if [ -f "$HOME/.oh-my-zsh/oh-my-zsh.sh" ]; then
     ui_ok "oh-my-zsh  installed"
 else
