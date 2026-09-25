@@ -1,16 +1,8 @@
-HISTFILE="$HOME/.zsh_history"
-HISTSIZE=50000
-SAVEHIST=50000
-setopt share_history hist_ignore_all_dups auto_cd
-
-autoload -Uz compinit && compinit
-zmodload zsh/complist
-zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z}'
-zstyle ':completion:*' menu select
-
-_spaceship="${HOMEBREW_PREFIX:-/opt/homebrew}/opt/spaceship/spaceship.zsh"
-[ -f "$_spaceship" ] && source "$_spaceship"
-unset _spaceship
+# Path to your oh-my-zsh installation.
+export ZSH="$HOME/.oh-my-zsh"
+ZSH_THEME="spaceship"
+plugins=(git)
+[ -f "$ZSH/oh-my-zsh.sh" ] && source "$ZSH/oh-my-zsh.sh"
 
 for file in ~/.dotfiles/config/{path,aliases,functions}; do
     [ -r "$file" ] && [ -f "$file" ] && source "$file";
@@ -19,14 +11,14 @@ unset file;
 
 [ -f "$HOME/.zshrc.private" ] && source "$HOME/.zshrc.private"
 
-export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
+[ -f /opt/homebrew/opt/asdf/libexec/asdf.sh ] && . /opt/homebrew/opt/asdf/libexec/asdf.sh
 
 export PATH="$HOME/.local/bin:$PATH"
 
 # Shell enhancements — each one is skipped when the brew formula isn't installed
-_autosuggest="${HOMEBREW_PREFIX:-/opt/homebrew}/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
-[ -f "$_autosuggest" ] && source "$_autosuggest"
-unset _autosuggest
+_omz_autosuggest="${HOMEBREW_PREFIX:-/opt/homebrew}/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
+[ -f "$_omz_autosuggest" ] && source "$_omz_autosuggest"
+unset _omz_autosuggest
 
 if command -v fzf >/dev/null 2>&1; then
     source <(fzf --zsh)
@@ -45,6 +37,6 @@ fi
 command -v zoxide >/dev/null 2>&1 && eval "$(zoxide init zsh)"
 
 # Must stay last: it wraps every widget defined above it
-_highlight="${HOMEBREW_PREFIX:-/opt/homebrew}/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
-[ -f "$_highlight" ] && source "$_highlight"
-unset _highlight
+_omz_highlight="${HOMEBREW_PREFIX:-/opt/homebrew}/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+[ -f "$_omz_highlight" ] && source "$_omz_highlight"
+unset _omz_highlight

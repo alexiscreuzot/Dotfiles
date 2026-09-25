@@ -94,6 +94,8 @@ printf '\n'
 printf '  %sdots%s\n' "$C_BOLD" "$C_RESET"
 printf '  %spull, apply, and push both repos%s\n' "$C_DIM" "$C_RESET"
 
+ui_step() { :; }
+
 printf '\n'
 printf '  %s───%s  %scapture%s\n' "$C_DIM" "$C_RESET" "$C_BOLD" "$C_RESET"
 chezmoi re-add --source "$DOTFILES_DIR" || ui_warn "public re-add reported an error"
