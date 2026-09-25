@@ -46,7 +46,7 @@ Reports what is off and changes nothing. It checks tooling, GitHub, both repos, 
 
 Secrets, work config, your own apps. Create `<you>/Dotfiles-private` and the next apply clones it to `~/.dotfiles-private` and layers it on top of the public repo. If it's missing, unreachable, or you declined it, apply skips it. Run `chezmoi init --prompt` to change that.
 
-![private layer](assets/private-v2.svg)
+![private layer](assets/private-v3.svg)
 
 ```text
 Brewfile                            apps on top of the public ones
