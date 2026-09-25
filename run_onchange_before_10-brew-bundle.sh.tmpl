@@ -1,0 +1,47 @@
+#!/bin/bash
+# Re-runs whenever the Brewfile changes.
+# Brewfile hash: {{ include "Brewfile" | sha256sum }}
+
+_src="{{ .chezmoi.sourceDir }}"
+_brewfile="$_src/Brewfile"
+
+if ! command -v brew >/dev/null 2>&1; then
+    echo "Homebrew not found, skipping brew bundle"
+    exit 0
+fi
+
+# Homebrew resets the sudo timestamp on every `brew` call. SUDO_ASKPASS
+# (set by keep_sudo) is how later pkg casks get the password without a prompt.
+if [ -n "${SUDO_ASKPASS:-}" ] && [ -x "$SUDO_ASKPASS" ]; then
+    sudo -A -v 2>/dev/null || true
+fi
+
+# Tap first so brew info can see tap casks (Echo, SuperCmd).
+while read -r _tap _url; do
+    [ -n "$_tap" ] || continue
+    if [ -n "$_url" ]; then
+        brew tap "$_tap" "$_url" >/dev/null 2>&1 || true
+    else
+        brew tap "$_tap" >/dev/null 2>&1 || true
+    fi
+done <<EOF
+$(awk -F'"' '/^tap / { print $2, $4 }' "$_brewfile")
+EOF
+
+# Skip casks whose app, payload, or leftover helper is already on disk.
+# brew bundle would otherwise try to reinstall them (and hang on pkg
+# installers).
+if [ -f "$_src/cask-present.py" ]; then
+    _skip="$(python3 "$_src/cask-present.py" --skip --brewfile "$_brewfile" || true)"
+    if [ -n "$_skip" ]; then
+        HOMEBREW_BUNDLE_CASK_SKIP="${HOMEBREW_BUNDLE_CASK_SKIP:+$HOMEBREW_BUNDLE_CASK_SKIP }$_skip"
+        export HOMEBREW_BUNDLE_CASK_SKIP
+        echo "already installed, skipping: $_skip"
+    fi
+fi
+
+# Homebrew 7 upgrades by default. That batches upgrades after the last
+# "Using" line, then hangs on pkg installers or on quitting apps that
+# are still open (Cursor). Apply only installs what's missing.
+brew bundle --no-upgrade --file="$_brewfile" || \
+    echo "warning: some Brewfile entries failed — see output above"

@@ -1,0 +1,37 @@
+#!/bin/bash
+# Clones the private dotfiles if needed, then applies them as their own
+# chezmoi source. A machine that cannot read the repo keeps going.
+
+REPO="git@github.com:alexiscreuzot/Dotfiles-private.git"
+SRC="$HOME/Developer/alexiscreuzot/Dotfiles-private"
+CFG="$HOME/.config/chezmoi-private/chezmoi.toml"
+STATE="$HOME/.config/chezmoi-private/chezmoistate.boltdb"
+
+if [ ! -d "$SRC/.git" ]; then
+    if [ -e "$SRC" ]; then
+        echo "dotfiles-private: $SRC exists but is not a checkout — leaving it alone"
+        exit 0
+    fi
+    mkdir -p "$(dirname "$SRC")"
+    if ! git clone "$REPO" "$SRC"; then
+        echo "warning: could not clone $REPO — private dotfiles skipped"
+        exit 0
+    fi
+fi
+
+if [ ! -f "$CFG" ]; then
+    mkdir -p "$(dirname "$CFG")"
+    if ! chezmoi init --source "$SRC" --config-path "$CFG" --persistent-state "$STATE"; then
+        echo "warning: private chezmoi init failed"
+        exit 0
+    fi
+fi
+
+if [ "${CHEZMOI_COMMAND:-}" = "update" ]; then
+    chezmoi --config "$CFG" --persistent-state "$STATE" --source "$SRC" update || \
+        echo "warning: private chezmoi update failed"
+else
+    chezmoi --config "$CFG" --persistent-state "$STATE" --source "$SRC" apply || \
+        echo "warning: private chezmoi apply failed"
+fi
+exit 0

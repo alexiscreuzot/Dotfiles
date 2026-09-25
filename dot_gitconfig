@@ -1,0 +1,18 @@
+[filter "lfs"]
+	required = true
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+[user]
+	name = Alexis Creuzot
+	email = alexis.creuzot@gmail.com
+[core]
+    editor = zed --wait
+[url "git@github.com:"]
+	insteadOf = https://github.com/
+[credential "https://origin.cursor.com/git"]
+	helper = 
+	helper = !/Users/acreuzot/.local/bin/origin credential-helper
+[credential "https://origin.cursor.com"]
+	helper = 
+	helper = !/Users/acreuzot/.local/bin/origin credential-helper

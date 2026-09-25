@@ -1,0 +1,191 @@
+#!/bin/bash
+# Post-clone apply. Run install.sh on a fresh Mac; this script is invoked from there.
+set -e
+
+DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
+
+if [ -z "${DOTFILES_FROM_INSTALL:-}" ]; then
+    DOTFILES_STEPS=3
+    DOTFILES_STEP=0
+fi
+
+# shellcheck source=ui.sh
+. "$DOTFILES_DIR/ui.sh"
+
+load_brew || true
+
+_missing=""
+for cmd in brew chezmoi age git; do
+    if ! command -v "$cmd" >/dev/null 2>&1; then
+        _missing="$_missing $cmd"
+    fi
+done
+if [ -n "$_missing" ]; then
+    ui_header
+    ui_fail "missing tools:$_missing"
+    ui_note "run install.sh first — it will skip anything you already have"
+    ui_note "~/Developer/alexiscreuzot/Dotfiles/install.sh"
+    exit 1
+fi
+
+if [ -z "${DOTFILES_FROM_INSTALL:-}" ]; then
+    ui_header
+fi
+keep_sudo
+reclaim_if_foreign "$HOME/.oh-my-zsh"
+reclaim_if_foreign "$HOME/.config/chezmoi"
+
+ui_step "age private key"
+_age_key="$HOME/.config/chezmoi/key.txt"
+if [ -s "$_age_key" ]; then
+    ui_ok "already in place  $_age_key"
+else
+    mkdir -p "$HOME/.config/chezmoi"
+    ui_info "the private dotfiles need your age key from Bitwarden"
+    ui_note "item looks like AGE-SECRET-KEY-..."
+    ui_note "it will be written to  $_age_key"
+    ui_menu "How do you want to provide the age key?" "" \
+        "Paste it here" \
+        "I already saved it to the file" \
+        "Skip for now"
+    case "$UI_CHOICE" in
+        1)
+            printf '          %sPaste the key, then Enter%s\n' "$C_DIM" "$C_RESET"
+            printf '          '
+            _pasted=""
+            _tries=0
+            while [ "$_tries" -lt 2 ]; do
+                _line=""
+                IFS= read -r _line < /dev/tty || _line=""
+                _line="$(printf '%s' "$_line" | tr -d '\r' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+                if [ -n "$_line" ]; then
+                    _pasted="$_line"
+                    break
+                fi
+                _tries=$((_tries + 1))
+            done
+            if printf '%s' "$_pasted" | grep -q '^AGE-SECRET-KEY-'; then
+                mkdir -p "$HOME/.config/chezmoi"
+                umask 077
+                printf '%s\n' "$_pasted" > "$_age_key"
+                chmod 600 "$_age_key"
+                if [ -s "$_age_key" ]; then
+                    ui_ok "saved  $_age_key"
+                else
+                    ui_fail "could not write  $_age_key"
+                fi
+            elif [ -n "$_pasted" ]; then
+                ui_warn "that doesn't look like an age key — not writing the file"
+                ui_note "it should start with AGE-SECRET-KEY-"
+            else
+                ui_warn "nothing pasted — private encrypted files will be skipped"
+            fi
+            ;;
+        2)
+            if [ -s "$_age_key" ]; then
+                chmod 600 "$_age_key"
+                ui_ok "key is in place"
+            else
+                ui_warn "file is still missing or empty — private encrypted files will be skipped"
+            fi
+            ;;
+        *)
+            ui_info "skipped — private encrypted files won't apply until the key is there"
+            ;;
+    esac
+    if [ -f "$_age_key" ]; then
+        chmod 600 "$_age_key"
+    fi
+fi
+
+ui_step "Apply"
+ui_info "chezmoi writes configs, then brew bundle, oh-my-zsh, and macOS defaults"
+# source-path exits 0 even when the directory does not exist (the default is
+# ~/.local/share/chezmoi). Only skip init when that path is a real checkout.
+_src="$(chezmoi source-path 2>/dev/null || true)"
+if [ -d "$_src" ] && [ -f "$_src/.chezmoi.toml.tmpl" ]; then
+    ui_info "chezmoi already initialized — applying"
+    if chezmoi apply --source "$DOTFILES_DIR"; then
+        ui_ok "applied"
+    else
+        ui_warn "apply reported errors — already-installed apps are usually why"
+        ui_note "re-run anytime; finished work is skipped"
+    fi
+else
+    ui_info "first apply — this can take a while"
+    if chezmoi init --apply --source "$DOTFILES_DIR"; then
+        ui_ok "applied"
+    else
+        ui_warn "apply reported errors — already-installed apps are usually why"
+        ui_note "re-run anytime; finished work is skipped"
+    fi
+fi
+
+ui_step "Shell"
+ui_info "making sure ~/.zshrc, oh-my-zsh, and aliases are in place"
+
+if chezmoi apply --source "$DOTFILES_DIR" "$HOME/.zshrc"; then
+    ui_ok "~/.zshrc  applied"
+else
+    ui_warn "chezmoi could not write ~/.zshrc — checking what's there"
+fi
+
+if [ -f "$HOME/.zshrc" ]; then
+    ui_ok "~/.zshrc  present"
+else
+    ui_fail "~/.zshrc is missing — aliases will not load"
+fi
+
+_frag_ok=1
+for _frag in path aliases functions; do
+    if [ -f "$DOTFILES_DIR/$_frag" ]; then
+        ui_ok "$_frag  $DOTFILES_DIR/$_frag"
+    else
+        ui_fail "$_frag  missing from $DOTFILES_DIR"
+        _frag_ok=0
+    fi
+done
+
+bash "$DOTFILES_DIR/run_once_after_20-oh-my-zsh.sh" || true
+if [ -f "$HOME/.oh-my-zsh/oh-my-zsh.sh" ]; then
+    ui_ok "oh-my-zsh  installed"
+else
+    ui_warn "oh-my-zsh is not installed yet"
+fi
+if [ -L "$HOME/.oh-my-zsh/custom/themes/spaceship.zsh-theme" ] || \
+   [ -f "$HOME/.oh-my-zsh/custom/themes/spaceship.zsh-theme" ]; then
+    ui_ok "Spaceship theme  linked"
+else
+    ui_warn "Spaceship theme is not linked — prompt will fall back"
+fi
+
+_login_shell="$(dscl . -read "/Users/$USER" UserShell 2>/dev/null | awk '{print $2}')"
+if [ "$_login_shell" = "/bin/zsh" ] || [ "$_login_shell" = "/usr/local/bin/zsh" ] || \
+   [ "$_login_shell" = "/opt/homebrew/bin/zsh" ]; then
+    ui_ok "login shell  $_login_shell"
+else
+    ui_info "login shell is ${_login_shell:-unknown} — switching to /bin/zsh"
+    if dotfiles_sudo chsh -s /bin/zsh "$USER"; then
+        ui_ok "login shell  /bin/zsh"
+    else
+        ui_warn "could not change login shell — you can run:  chsh -s /bin/zsh"
+    fi
+fi
+
+if [ "$_frag_ok" -eq 1 ] && [ -f "$HOME/.zshrc" ]; then
+    if zsh -c 'source "$HOME/.zshrc" >/dev/null 2>&1 && alias g' >/dev/null 2>&1; then
+        ui_ok "aliases load  g → git"
+    else
+        ui_warn "could not pre-check aliases — they should still load in the new shell"
+    fi
+fi
+
+_zsh="$(command -v zsh || true)"
+[ -x "$_zsh" ] || _zsh="/bin/zsh"
+
+ui_done
+stop_sudo_keepalive
+if [ -t 0 ] && [ -x "$_zsh" ]; then
+    exec "$_zsh" -l
+fi
+ui_note "no tty — in your next terminal, run:  source ~/.zshrc"

@@ -1,0 +1,365 @@
+#!/bin/bash
+# macOS system preferences. Edit this file to taste; chezmoi re-runs it
+# automatically whenever its contents change.
+
+# --- Finder ---
+defaults write com.apple.finder AppleShowAllFiles -bool false
+defaults write NSGlobalDomain AppleShowAllExtensions -bool true
+defaults write com.apple.finder ShowPathbar -bool true
+defaults write com.apple.finder ShowStatusBar -bool true
+defaults write com.apple.finder FXEnableExtensionChangeWarning -bool false
+defaults write com.apple.finder _FXSortFoldersFirst -bool true
+defaults write com.apple.finder _FXSortFoldersFirstOnDesktop -bool true
+defaults write com.apple.finder FXDefaultSearchScope -string "SCcf"
+defaults write com.apple.finder NewWindowTarget -string "PfHm"
+defaults write com.apple.finder NewWindowTargetPath -string "file://${HOME}/"
+
+# --- Keyboard ---
+# 1 / 10 is a step faster than the System Settings sliders (2 / 15).
+defaults write NSGlobalDomain KeyRepeat -int 1
+defaults write NSGlobalDomain InitialKeyRepeat -int 10
+# Hold a letter for accents (é è à ç). Arrows and delete still repeat.
+defaults write NSGlobalDomain ApplePressAndHoldEnabled -bool true
+defaults write NSGlobalDomain NSAutomaticQuoteSubstitutionEnabled -bool false
+defaults write NSGlobalDomain NSAutomaticDashSubstitutionEnabled -bool false
+defaults write NSGlobalDomain NSAutomaticPeriodSubstitutionEnabled -bool false
+
+# --- Trackpad ---
+defaults write com.apple.AppleMultitouchTrackpad Clicking -bool true
+defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad Clicking -bool true
+defaults write NSGlobalDomain com.apple.mouse.tapBehavior -int 1
+defaults -currentHost write NSGlobalDomain com.apple.mouse.tapBehavior -int 1
+
+# --- Screenshots ---
+mkdir -p "$HOME/Screenshots"
+defaults write com.apple.screencapture location -string "$HOME/Screenshots"
+defaults write com.apple.screencapture type -string "png"
+defaults write com.apple.screencapture disable-shadow -bool true
+
+# --- Dock ---
+defaults write com.apple.dock autohide -bool true
+defaults write com.apple.dock show-recents -bool false
+defaults write com.apple.dock tilesize -int 55
+defaults write com.apple.dock mineffect -string scale
+defaults write com.apple.dock minimize-to-application -bool true
+
+# Pinned apps match the current machine. Missing apps are skipped so a
+# fresh Mac without Xcode or Outlook still gets the rest.
+_dock_add() {
+    [ -e "$1" ] || return 0
+    dockutil --add "$1" --no-restart >/dev/null
+}
+
+if command -v dockutil >/dev/null 2>&1; then
+    dockutil --remove all --no-restart >/dev/null
+    _dock_add "/System/Applications/Music.app"
+    _dock_add "/System/Applications/App Store.app"
+    _dock_add "/System/Applications/Calendar.app"
+    _dock_add "/Applications/Slack.app"
+    _dock_add "/Applications/Microsoft Teams.app"
+    _dock_add "/Applications/Microsoft Outlook.app"
+    _dock_add "/System/Applications/Notes.app"
+    _dock_add "/Applications/Arc.app"
+    _dock_add "/Applications/Xcodes.app"
+    _xcode=""
+    if [ -d /Applications/Xcode.app ]; then
+        _xcode="/Applications/Xcode.app"
+    else
+        _xcode="$(ls -1d /Applications/Xcode-*.app 2>/dev/null | sort -V | tail -1 || true)"
+    fi
+    if [ -n "$_xcode" ]; then
+        _dock_add "$_xcode"
+        _dock_add "$_xcode/Contents/Developer/Applications/Simulator.app"
+    fi
+    _dock_add "/Applications/Cursor.app"
+    _dock_add "/Applications/GitHub Desktop.app"
+    _dock_add "/System/Applications/Utilities/Terminal.app"
+    _dock_add "/System/Applications/System Settings.app"
+    # Add through dockutil so cfprefsd sees them, then turn the alias
+    # tiles into real directory-tiles (no shortcut arrow).
+    dockutil --add /Applications --view list --display folder --sort name --no-restart >/dev/null
+    dockutil --add "$HOME/Downloads" --view list --display folder --sort dateadded --no-restart >/dev/null
+    _dock_plist="$(mktemp)"
+    defaults export com.apple.dock "$_dock_plist"
+    python3 - "$_dock_plist" <<'PY'
+import pathlib, plistlib, sys
+
+def folder_tile(path, arrangement):
+    url = path.resolve().as_uri()
+    if not url.endswith("/"):
+        url += "/"
+    return {
+        "tile-data": {
+            "arrangement": arrangement,
+            "displayas": 1,
+            "file-data": {"_CFURLString": url, "_CFURLStringType": 15},
+            "file-label": path.name,
+            "file-type": 2,
+            "preferreditemsize": -1,
+            "showas": 3,
+        },
+        "tile-type": "directory-tile",
+    }
+
+plist_path = pathlib.Path(sys.argv[1])
+with plist_path.open("rb") as f:
+    dock = plistlib.load(f)
+dock["persistent-others"] = [
+    folder_tile(pathlib.Path("/Applications"), 1),
+    folder_tile(pathlib.Path.home() / "Downloads", 2),
+]
+with plist_path.open("wb") as f:
+    plistlib.dump(dock, f)
+PY
+    defaults import com.apple.dock "$_dock_plist"
+    rm -f "$_dock_plist"
+fi
+
+# --- Default apps: Arc, IINA, Keka, Zed ---
+python3 - <<'PY'
+import ctypes
+import ctypes.util
+import plistlib
+from pathlib import Path
+
+def load(name, fallback):
+    return ctypes.cdll.LoadLibrary(ctypes.util.find_library(name) or fallback)
+
+cf = load("CoreFoundation", "/System/Library/Frameworks/CoreFoundation.framework/CoreFoundation")
+cs = load("CoreServices", "/System/Library/Frameworks/CoreServices.framework/CoreServices")
+uti_lib = load(
+    "UniformTypeIdentifiers",
+    "/System/Library/Frameworks/UniformTypeIdentifiers.framework/UniformTypeIdentifiers",
+)
+
+kCFStringEncodingUTF8 = 0x08000100
+kLSRolesAll = 0xFFFFFFFF
+
+cf.CFStringCreateWithCString.restype = ctypes.c_void_p
+cf.CFStringCreateWithCString.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_uint32]
+cs.LSSetDefaultHandlerForURLScheme.restype = ctypes.c_int32
+cs.LSSetDefaultHandlerForURLScheme.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
+cs.LSSetDefaultRoleHandlerForContentType.restype = ctypes.c_int32
+cs.LSSetDefaultRoleHandlerForContentType.argtypes = [
+    ctypes.c_void_p,
+    ctypes.c_uint32,
+    ctypes.c_void_p,
+]
+uti_lib.UTTypeCreatePreferredIdentifierForTag.restype = ctypes.c_void_p
+uti_lib.UTTypeCreatePreferredIdentifierForTag.argtypes = [
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+]
+
+def cfstr(text):
+    return cf.CFStringCreateWithCString(None, text.encode(), kCFStringEncodingUTF8)
+
+def set_scheme(bundle_id, scheme):
+    cs.LSSetDefaultHandlerForURLScheme(cfstr(scheme), cfstr(bundle_id))
+
+def set_uti(bundle_id, uti):
+    cs.LSSetDefaultRoleHandlerForContentType(cfstr(uti), kLSRolesAll, cfstr(bundle_id))
+
+def set_ext(bundle_id, ext):
+    ident = uti_lib.UTTypeCreatePreferredIdentifierForTag(
+        cfstr("public.filename-extension"), cfstr(ext), None
+    )
+    if ident:
+        cs.LSSetDefaultRoleHandlerForContentType(ident, kLSRolesAll, cfstr(bundle_id))
+
+if Path("/Applications/Arc.app").is_dir():
+    for scheme in ("http", "https"):
+        set_scheme("company.thebrowser.Browser", scheme)
+
+iina = Path("/Applications/IINA.app")
+if iina.is_dir():
+    bundle = "com.colliderli.iina"
+    for uti in ("public.movie", "public.audio"):
+        set_uti(bundle, uti)
+    skip = {"*", "gif", "iinaplgz", "iinaplugin"}
+    info = plistlib.loads((iina / "Contents/Info.plist").read_bytes())
+    exts = {
+        ext.lower()
+        for doc in info.get("CFBundleDocumentTypes") or []
+        for ext in doc.get("CFBundleTypeExtensions") or []
+        if ext.lower() not in skip
+    }
+    for ext in sorted(exts):
+        set_ext(bundle, ext)
+
+if Path("/Applications/Keka.app").is_dir():
+    bundle = "com.aone.keka"
+    for uti in (
+        "public.zip-archive",
+        "public.tar-archive",
+        "org.gnu.gnu-zip-archive",
+        "public.gzip",
+        "public.bzip2-archive",
+        "org.7-zip.7-zip-archive",
+        "com.rarlab.rar-archive",
+    ):
+        set_uti(bundle, uti)
+    for ext in (
+        "zip", "zipx", "rar", "7z", "tar", "gz", "gzip", "tgz",
+        "tbz", "tbz2", "bz2", "xz", "txz", "lzma", "lz", "lz4",
+        "zst", "tzst", "cab", "lha", "lzh", "cpio", "cpgz",
+    ):
+        set_ext(bundle, ext)
+
+if Path("/Applications/Zed.app").is_dir():
+    bundle = "dev.zed.Zed"
+    for uti in (
+        "public.plain-text",
+        "public.utf8-plain-text",
+        "net.daringfireball.markdown",
+        "public.markdown",
+        "public.json",
+        "public.yaml",
+        "org.yaml.yaml",
+        "com.apple.property-list",
+        "public.xml",
+        "public.comma-separated-values-text",
+    ):
+        set_uti(bundle, uti)
+    for ext in (
+        "txt", "md", "markdown", "json", "yaml", "yml", "plist",
+        "csv", "log", "toml", "ini", "conf", "cfg", "xml", "strings",
+    ):
+        set_ext(bundle, ext)
+PY
+
+# --- SuperCmd takes Cmd+Space from Spotlight ---
+# 64 = Show Spotlight search, 65 = Show Finder search window.
+defaults write com.apple.symbolichotkeys AppleSymbolicHotKeys \
+    -dict-add 64 '<dict><key>enabled</key><false/></dict>'
+defaults write com.apple.symbolichotkeys AppleSymbolicHotKeys \
+    -dict-add 65 '<dict><key>enabled</key><false/></dict>'
+_activate_settings="/System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings"
+if [ -x "$_activate_settings" ]; then
+    "$_activate_settings" -u
+fi
+if [ -d "/Applications/SuperCmd.app" ]; then
+    mkdir -p "$HOME/Library/Application Support/SuperCmd"
+    python3 - "$HOME/Library/Application Support/SuperCmd/settings.json" <<'PY'
+import json
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+data = {}
+if path.exists():
+    try:
+        loaded = json.loads(path.read_text())
+        if isinstance(loaded, dict):
+            data = loaded
+    except json.JSONDecodeError:
+        pass
+
+# SuperCmd installs any name in this list that is not already on disk.
+default_extensions = [
+    "brew",
+    "xcode",
+    "github",
+    "jira",
+    "bitwarden",
+    "google-translate",
+    "kill-process",
+    "cursor",
+    "change-case",
+    "uuid-generator",
+    "color-picker",
+    "world-clock",
+    "swift-evolution",
+]
+tombstones = data.get("extensionUninstallTombstones") or {}
+installed = list(data.get("installedExtensions") or [])
+known = set(installed)
+for name in default_extensions:
+    if name in tombstones or name in known:
+        continue
+    installed.append(name)
+    known.add(name)
+
+data["globalShortcut"] = "Command+Space"
+data["openAtLogin"] = True
+data["hasSeenOnboarding"] = True
+data["installedExtensions"] = installed
+
+# Rectangle already owns these chords.
+hotkeys = dict(data.get("commandHotkeys") or {})
+for key in (
+    "system-window-management-left",
+    "system-window-management-right",
+    "system-window-management-top",
+    "system-window-management-bottom",
+    "system-window-management-top-left",
+    "system-window-management-top-right",
+    "system-window-management-bottom-left",
+    "system-window-management-bottom-right",
+    "system-window-management-first-third",
+    "system-window-management-center-third",
+    "system-window-management-last-third",
+    "system-window-management-first-two-thirds",
+    "system-window-management-center-two-thirds",
+    "system-window-management-last-two-thirds",
+    "system-window-management-center",
+    "system-window-management-fill",
+    "system-window-management-increase-size-10",
+    "system-window-management-decrease-size-10",
+):
+    hotkeys[key] = ""
+data["commandHotkeys"] = hotkeys
+
+path.write_text(json.dumps(data, indent=2) + "\n")
+PY
+    for _app in "Raycast" "Sol"; do
+        osascript -e "tell application \"$_app\" to quit" 2>/dev/null || true
+    done
+    if [ -d "/Applications/Raycast.app" ]; then
+        defaults delete com.raycast.macos raycastGlobalHotkey 2>/dev/null || true
+    fi
+    if ! pgrep -f "/Applications/SuperCmd.app" >/dev/null 2>&1; then
+        open -gj -a SuperCmd 2>/dev/null || true
+    fi
+fi
+
+# --- Network volumes: no .DS_Store litter ---
+defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool true
+defaults write com.apple.desktopservices DSDontWriteUSBStores -bool true
+
+# Quick Look generators (Syntax Highlight, QLMarkdown) pick up after a reset.
+qlmanage -r >/dev/null 2>&1 || true
+qlmanage -r cache >/dev/null 2>&1 || true
+
+# --- Swift Quit: red close button quits the app ---
+if [ -d "/Applications/Swift Quit.app" ]; then
+    defaults write onebadidea.Swift-Quit SwiftQuitSettings -dict \
+        launchAtLogin "true" \
+        menubarIconEnabled "true" \
+        excludeBehaviour "excludeApps" \
+        launchHidden "true" \
+        closeDelay "2"
+    _swift_quit_keep=()
+    for _app in \
+        "/Applications/Slack.app" \
+        "/Applications/Microsoft Teams.app" \
+        "/Applications/Microsoft Outlook.app" \
+        "/System/Applications/Music.app" \
+        "/Applications/Bitwarden.app" \
+        "/Applications/Rectangle.app" \
+        "/Applications/SuperCmd.app" \
+        "/Applications/Docker.app"
+    do
+        [ -d "$_app" ] && _swift_quit_keep+=("$_app")
+    done
+    if [ "${#_swift_quit_keep[@]}" -gt 0 ]; then
+        defaults write onebadidea.Swift-Quit SwiftQuitExcludedApps -array "${_swift_quit_keep[@]}"
+    fi
+fi
+
+killall cfprefsd Finder Dock SystemUIServer 2>/dev/null || true
+
+if [ -d "/Applications/Swift Quit.app" ]; then
+    open -gj -a "Swift Quit" 2>/dev/null || true
+fi

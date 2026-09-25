@@ -1,0 +1,348 @@
+#   Functions 
+#   ------------------------------------------------------------
+
+# GitHub PR Auto-Approver using GitHub CLI
+# Requires: gh CLI tool installed and authenticated
+#!/bin/zsh
+# GitHub PR Auto-Approver using GitHub CLI (zsh compatible)
+# Add this to your ~/.zshrc
+
+approve_pr() {
+    if [ $# -eq 0 ]; then
+        echo "Usage: approve_pr <pr_url> [review_message]"
+        echo "Example: approve_pr https://github.com/sorenson-eng/forum-backend-socket/pull/132"
+        return 1
+    fi
+    
+    local pr_url="$1"
+    local review_message="${2:-Approved}"
+    
+    # Check if gh CLI is installed
+    if ! command -v gh &> /dev/null; then
+        echo "❌ Error: GitHub CLI (gh) is not installed"
+        echo "Install it with: brew install gh"
+        return 1
+    fi
+    
+    # Check if authenticated
+    if ! gh auth status &> /dev/null; then
+        echo "❌ Error: Not authenticated with GitHub CLI"
+        echo "Run: gh auth login"
+        return 1
+    fi
+    
+    # Extract components using zsh parameter expansion
+    # Remove the https://github.com/ prefix
+    local url_without_prefix="${pr_url#https://github.com/}"
+    
+    # Split on '/' - zsh uses different syntax
+    local parts=(${(s:/:)url_without_prefix})
+    
+    if [[ ${#parts} -ge 4 && "${parts[3]}" == "pull" ]]; then
+        local owner="${parts[1]}"
+        local repo="${parts[2]}"
+        local pr_number="${parts[4]}"
+    else
+        echo "❌ Error: Invalid GitHub PR URL format"
+        echo "Expected format: https://github.com/owner/repo/pull/123"
+        echo "Received: $pr_url"
+        return 1
+    fi
+    
+    echo "🔍 Approving PR: $owner/$repo#$pr_number"
+    
+    # Approve the PR using gh CLI
+    if gh pr review "$pr_number" --repo "$owner/$repo" --approve --body "$review_message"; then
+        echo "✅ Successfully approved PR #$pr_number"
+        echo "🔗 View PR: $pr_url"
+    else
+        echo "❌ Failed to approve PR #$pr_number"
+        return 1
+    fi
+}
+
+# Short alias
+alias apr='approve_pr'
+
+function iconify() {
+    ITUNES_ARTWORK="$1"
+    FOLDER="${2:-.}"
+
+    mkdir -p "$FOLDER"
+
+    sizes=(29 40 60 76)
+
+    for i in ${sizes[@]}; do
+        s1x=${i}
+        s2x=$(expr ${i} \* 2)
+        s3x=$(expr ${i} \* 3)
+        sips -z ${s1x} ${s1x} "$ITUNES_ARTWORK" --out "${FOLDER}/Icon-${i}.png"
+        sips -z ${s2x} ${s2x} "$ITUNES_ARTWORK" --out "${FOLDER}/Icon-${i}@2x.png"
+        sips -z ${s3x} ${s3x} "$ITUNES_ARTWORK" --out "${FOLDER}/Icon-${i}@3x.png"
+    done
+
+    sips -z 167 167 "$ITUNES_ARTWORK" --out "${FOLDER}/Icon-83.5@2x.png"
+}
+
+# Determine size of a file or total size of a directory
+function size() {
+    if du -b /dev/null > /dev/null 2>&1; then
+        local arg=-sbh;
+    else
+        local arg=-sh;
+    fi
+    if [[ -n "$@" ]]; then
+        du $arg -- "$@";
+    else
+        du $arg .[^.]* ./*;
+    fi;
+}
+
+# `o` with no arguments opens the current directory, otherwise opens the given
+# location
+function o() {
+    if [ $# -eq 0 ]; then
+        open .;
+    else
+        open "$@";
+    fi;
+}
+
+
+# Function to delete a Git tag both locally and remotely
+delete_git_tag() {
+    if [ -z "$1" ]; then
+        echo "Usage: delete_git_tag <tagname>"
+        return 1
+    fi
+
+    TAG=$1
+
+    # Delete the tag locally
+    echo "Deleting local tag: $TAG"
+    git tag -d $TAG
+
+    # Delete the tag from the remote
+    echo "Deleting remote tag: $TAG"
+    git push origin :refs/tags/$TAG
+
+    echo "Tag $TAG deleted locally and from the remote."
+}
+
+# Function to delete a Git tag locally and remotely, then recreate it on the latest commit
+retag() {
+    if [ -z "$1" ]; then
+        echo "Usage: retag <tagname>"
+        return 1
+    fi
+
+    TAG=$1
+
+    echo "Deleting local tag: $TAG"
+    git tag -d "$TAG"
+
+    echo "Deleting remote tag: $TAG"
+    git push origin :refs/tags/"$TAG"
+
+    echo "Creating new tag: $TAG on latest commit"
+    git tag "$TAG"
+
+    echo "Pushing new tag to remote"
+    git push origin "$TAG"
+
+    echo "Tag $TAG was retagged to the latest commit."
+}
+# Arrow-key menu. Sets REPLY to the 1-based index.
+_ask_menu() {
+  local title="$1"
+  shift
+  local -a opts=("$@")
+  local n=${#opts} sel=1 key rest
+  (( n > 0 )) || return 1
+  echo
+  echo "  $title"
+  _ask_menu_draw() {
+    local i
+    for i in {1..$n}; do
+      if (( i == sel )); then
+        print -P "  %B%F{cyan}▸ ${opts[i]}%f%b"
+      else
+        print -P "    %F{8}${opts[i]}%f"
+      fi
+    done
+    print -P "  %F{8}↑↓  move · Enter  confirm%f"
+  }
+  _ask_menu_draw
+  printf '\033[?25l'
+  trap 'printf "\033[?25h"' INT
+  while true; do
+    read -s -k 1 key
+    if [[ $key == $'\e' ]]; then
+      read -s -k 2 rest
+      case $rest in
+        "[A") (( sel = sel > 1 ? sel - 1 : n )) ;;
+        "[B") (( sel = sel < n ? sel + 1 : 1 )) ;;
+      esac
+    elif [[ $key == $'\n' || $key == $'\r' ]]; then
+      printf '\033[?25h'
+      trap - INT
+      REPLY=$sel
+      return 0
+    else
+      continue
+    fi
+    printf '\033[%sA' $((n + 1))
+    _ask_menu_draw
+  done
+}
+
+# Two-option arrow menu. Returns 0 for option 1, 1 for option 2.
+_ask_choice() {
+  _ask_menu "$1" "${2:-Yes}" "${3:-No}"
+  (( REPLY == 1 ))
+}
+
+# Ensure the open-webui venv exists; offer to create it if missing
+_ensure_open_webui() {
+  local webui_bin=~/Developer/open-webui-venv/bin/open-webui
+  [ -x "$webui_bin" ] && return 0
+  echo "open-webui is not installed."
+  _ask_choice "Create venv and install it now?" "Create venv" "Skip" || return 1
+  uv venv ~/Developer/open-webui-venv && \
+    uv pip install --python ~/Developer/open-webui-venv/bin/python open-webui
+}
+
+# Open WebUI standalone (Ollama backend)
+webui() {
+  _ensure_open_webui || return 1
+  export OLLAMA_BASE_URL=http://localhost:11434
+  ~/Developer/open-webui-venv/bin/open-webui serve
+}
+
+# Local AI stack: MLX model server + Open WebUI frontend
+ai() {
+  if ! command -v mlx_lm.server >/dev/null 2>&1; then
+    echo "mlx-lm is not installed (provides mlx_lm.server)."
+    _ask_choice "Install it with 'uv tool install mlx-lm'?" "Install" "Skip" || return 1
+    uv tool install mlx-lm || return 1
+  fi
+
+  _ensure_open_webui || return 1
+
+  local -a models
+  models=(~/Developer/models/*(/N))
+  if [ ${#models} -eq 0 ]; then
+    echo "No models found in ~/Developer/models."
+    echo "Get one with: hf download mlx-community/<model> --local-dir ~/Developer/models/<name>"
+    _ask_choice "Download a starter model (mlx-community/Llama-3.2-3B-Instruct-4bit, ~2GB)?" \
+      "Download" "Skip" || return 1
+    hf download mlx-community/Llama-3.2-3B-Instruct-4bit \
+      --local-dir ~/Developer/models/Llama-3.2-3B-Instruct-4bit || return 1
+    models=(~/Developer/models/*(/N))
+  fi
+
+  local mlx_pid ui_pid model
+  if [[ -n "$1" ]]; then
+    model=~/Developer/models/$1
+  else
+    local -a names
+    names=("${models[@]:t}")
+    _ask_menu "Models" "${names[@]}"
+    model=${models[$REPLY]}
+  fi
+
+  mlx_lm.server --model "$model" --max-tokens 8192 --host 127.0.0.1 --port 8000 &
+  mlx_pid=$!
+  ~/Developer/open-webui-venv/bin/open-webui serve &
+  ui_pid=$!
+
+  trap "kill $mlx_pid $ui_pid 2>/dev/null; trap - INT TERM EXIT" INT TERM EXIT
+  for i in {1..60}; do curl -sf http://127.0.0.1:8080/health >/dev/null && break; sleep 0.5; done
+  open http://localhost:8080
+  wait $mlx_pid $ui_pid
+}
+
+# Merge PDF files (uses uv ephemeral env, no permanent install)
+# Usage: mergepdf -o output.pdf input1.pdf input2.pdf ...
+mergepdf() {
+  uv run --no-project --with pypdf python3 - "$@" <<'EOF'
+import sys
+from pypdf import PdfWriter
+
+args = sys.argv[1:]
+if len(args) < 3 or args[0] != "-o":
+    sys.exit("Usage: mergepdf -o output.pdf input1.pdf input2.pdf ...")
+out, inputs = args[1], args[2:]
+writer = PdfWriter()
+for path in inputs:
+    writer.append(path)
+with open(out, "wb") as f:
+    writer.write(f)
+print(f"Merged {len(inputs)} PDFs into {out}")
+EOF
+}
+
+#   Xcode
+#   ------------------------------------------------------------
+
+# Open the Xcode project in the current directory — workspace wins over project
+xc() {
+  local -a targets
+  targets=(*.xcworkspace(N) *.xcodeproj(N) Package.swift(N))
+  if (( ${#targets} == 0 )); then
+    echo "No Xcode workspace, project or package in $PWD."
+    return 1
+  fi
+  open "${targets[1]}"
+}
+
+# Wipe DerivedData
+xcclean() {
+  local dd="$HOME/Library/Developer/Xcode/DerivedData"
+  if [ ! -d "$dd" ] || [ -z "$(ls -A "$dd")" ]; then
+    echo "DerivedData is already empty."
+    return 0
+  fi
+  local size="$(du -sh "$dd" 2>/dev/null | cut -f1)"
+  _ask_choice "Delete DerivedData ($size)?" "Delete" "Cancel" || return 1
+  rm -rf "$dd"/*
+  echo "Freed $size."
+}
+
+# Pick an iOS simulator and boot it
+sim() {
+  if ! command -v xcrun > /dev/null; then
+    echo "xcrun not found — install the Xcode command line tools."
+    return 1
+  fi
+
+  local json
+  json="$(xcrun simctl list devices available -j)" || return 1
+
+  # One row per device so the udid and its label can't drift apart
+  local -a rows
+  rows=("${(@f)$(print -r -- "$json" | jq -r '
+    .devices
+    | with_entries(select(.key | test("iOS")))
+    | to_entries[]
+    | (.key | split(".") | last | sub("^iOS-"; "iOS ") | gsub("-"; ".")) as $os
+    | .value[]
+    | "\(.udid)\t\(.name)  ·  \($os)"')}")
+  rows=("${(@)rows:#}")   # splitting empty output leaves one empty element
+
+  if (( ${#rows} == 0 )); then
+    echo "No iOS simulators available. Install a runtime from Xcode > Settings > Components."
+    return 1
+  fi
+
+  local -a udids names
+  local row
+  for row in "${rows[@]}"; do
+    udids+=("${row%%$'\t'*}")
+    names+=("${row#*$'\t'}")
+  done
+
+  _ask_menu "Simulators" "${names[@]}" || return 1
+  xcrun simctl boot "${udids[$REPLY]}" 2> /dev/null
+  open -a Simulator
+}

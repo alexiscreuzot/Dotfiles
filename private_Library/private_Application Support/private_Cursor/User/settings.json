@@ -1,0 +1,16 @@
+{
+    "terminal.integrated.defaultProfile.osx": "zsh",
+    "workbench.startupEditor": "none",
+    "git.enableSmartCommit": true,
+    "git.confirmSync": false,
+    "git.autofetch": true,
+    "markdown-preview-enhanced.previewTheme": "github-light.css",
+    "markdown-preview-enhanced.codeBlockTheme": "github.css",
+    "[html]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "sonarlint.connectedMode.connections.sonarcloud": [],
+    "typescript.experimental.useTsgo": true,
+    "window.autoDetectColorScheme": false,
+    "workbench.statusBar.visible": false
+}
