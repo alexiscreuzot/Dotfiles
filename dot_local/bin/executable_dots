@@ -103,9 +103,10 @@ if [ -f "$PRIV_CFG" ]; then
     pchez re-add || ui_warn "private re-add reported an error"
 fi
 
-_left="$(chezmoi status --source "$DOTFILES_DIR" 2>/dev/null | grep -v '^R ' || true)"
+# A leading " R" is a script chezmoi will run. It is not a file that drifted.
+_left="$(chezmoi status --source "$DOTFILES_DIR" 2>/dev/null | grep -vE '^[ R][ R] ' || true)"
 if [ -f "$PRIV_CFG" ]; then
-    _pleft="$(pchez status 2>/dev/null | grep -v '^R ' || true)"
+    _pleft="$(pchez status 2>/dev/null | grep -vE '^[ R][ R] ' || true)"
 else
     _pleft=""
 fi
