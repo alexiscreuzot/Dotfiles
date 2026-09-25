@@ -18,6 +18,26 @@ The checkout lands at `~/Developer/alexiscreuzot/Dotfiles`, with a symlink at `~
 
 The first `chezmoi init` asks three questions and remembers them: GUI apps, macOS defaults, and the private repo. `chezmoi init --prompt` asks again.
 
+```mermaid
+flowchart TD
+  tools["Tools
+  Xcode CLT, then Homebrew
+  git, gh, chezmoi, age, and Bitwarden"]
+  github["GitHub
+  One browser approval
+  gh creates the SSH key and uploads it"]
+  clone["Clone
+  ~/Developer/alexiscreuzot/Dotfiles
+  linked from ~/Developer/Dotfiles"]
+  choices["Choices
+  GUI apps, macOS defaults, private repo
+  Age key paste only if private is on"]
+  apply["Apply
+  Dotfiles, Brewfile, oh-my-zsh, defaults
+  then the private repo"]
+  tools --> github --> clone --> choices --> apply
+```
+
 ## What gets applied
 
 ```text
