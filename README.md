@@ -16,7 +16,7 @@ chezmoi · zsh · Homebrew · age
 2. Approve GitHub in the browser, then confirm your name and email.
 3. Choose apps, macOS defaults, and a private repo. If private is on, paste your age key.
 
-![install flow](assets/install.svg)
+![install flow](assets/install-flow.svg)
 
 ## `dots`
 
