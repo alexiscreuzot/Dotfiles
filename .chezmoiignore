@@ -9,6 +9,8 @@ aliases
 functions
 path
 .gitignore
+assets
+assets/**
 
 # Raw Cursor settings. Chezmoi only manages the symlinks that point here.
 cursor
