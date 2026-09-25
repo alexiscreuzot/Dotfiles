@@ -331,13 +331,26 @@ else
             else
                 ui_info "key may already be on GitHub — that's fine"
             fi
+            if gh ssh-key add "$HOME/.ssh/id_ed25519.pub" --type signing --title "$_title" 2>/dev/null; then
+                ui_ok "signing key uploaded"
+            else
+                ui_info "signing key may already be on GitHub — that's fine"
+            fi
         else
             ui_info "one browser approval signs in and uploads an SSH key"
             gh auth login \
                 --hostname github.com \
                 --git-protocol ssh \
                 --web \
-                --scopes admin:public_key || ui_warn "gh login didn't finish"
+                --scopes "admin:public_key,admin:ssh_signing_key" || ui_warn "gh login didn't finish"
+            if gh_logged_in && [ -f "$HOME/.ssh/id_ed25519.pub" ]; then
+                _title="$(hostname -s 2>/dev/null || echo mac)-$(date +%Y-%m-%d)"
+                if gh ssh-key add "$HOME/.ssh/id_ed25519.pub" --type signing --title "$_title" 2>/dev/null; then
+                    ui_ok "signing key uploaded"
+                else
+                    ui_info "signing key may already be on GitHub — that's fine"
+                fi
+            fi
         fi
 
         if ! github_ssh_ok; then
