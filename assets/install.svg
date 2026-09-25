@@ -6,7 +6,7 @@
   <text x="88" y="27" fill="#8b949e" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13">install</text>
 
   <text x="28" y="68" fill="#e6edf3" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="15" font-weight="650">from a clean Mac to a working one</text>
-  <text x="28" y="91" fill="#8b949e" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13">one command · one browser approval · a few choices</text>
+  <text x="28" y="91" fill="#8b949e" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13">one command Â· one browser approval Â· a few choices</text>
 
   <g stroke="#30363d" stroke-width="2" fill="none">
     <path d="M174 190h28"/>
@@ -40,7 +40,7 @@
   <g fill="#e6edf3" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13">
     <text x="44" y="184">Xcode CLT</text>
     <text x="44" y="204">Homebrew</text>
-    <text x="44" y="224">git · gh · age</text>
+    <text x="44" y="224">git Â· gh Â· age</text>
 
     <text x="218" y="184">approve once</text>
     <text x="218" y="204">SSH key</text>
