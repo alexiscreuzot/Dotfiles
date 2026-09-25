@@ -51,4 +51,23 @@ defaults write com.apple.dock minimize-to-application -bool true
 defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool true
 defaults write com.apple.desktopservices DSDontWriteUSBStores -bool true
 
+# --- Touch ID for sudo ---
+# /etc/pam.d/sudo_local survives macOS updates. Inside tmux this needs
+# pam-reattach, which is not installed here.
+_sudo_local="/etc/pam.d/sudo_local"
+if ! grep -q 'pam_tid.so' "$_sudo_local" 2>/dev/null; then
+    if [ -n "${SUDO_ASKPASS:-}" ] && [ -x "$SUDO_ASKPASS" ]; then
+        _pam_sudo() { sudo -A "$@"; }
+    else
+        _pam_sudo() { sudo "$@"; }
+    fi
+    if [ -f "$_sudo_local" ]; then
+        printf 'auth sufficient pam_tid.so\n' | _pam_sudo tee -a "$_sudo_local" >/dev/null || \
+            echo "warning: could not enable Touch ID for sudo"
+    else
+        printf 'auth sufficient pam_tid.so\n' | _pam_sudo tee "$_sudo_local" >/dev/null || \
+            echo "warning: could not enable Touch ID for sudo"
+    fi
+fi
+
 killall cfprefsd Finder Dock SystemUIServer 2>/dev/null || true
