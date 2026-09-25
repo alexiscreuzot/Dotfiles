@@ -1,0 +1,13 @@
+name: shellcheck
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  shellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: shellcheck
+        run: shellcheck --severity=warning install.sh scripts/*.sh home/dot_local/bin/executable_dots
