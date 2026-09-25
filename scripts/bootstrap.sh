@@ -57,7 +57,7 @@ if [ -s "$_age_key" ]; then
     ui_ok "already in place  $_age_key"
 else
     mkdir -p "$HOME/.config/chezmoi"
-    ui_info "the private dotfiles need your age key from Bitwarden"
+    ui_info "the private dotfiles need your age key from your password manager"
     ui_note "item looks like AGE-SECRET-KEY-..."
     ui_note "it will be written to  $_age_key"
     ui_menu "How do you want to provide the age key?" "" \

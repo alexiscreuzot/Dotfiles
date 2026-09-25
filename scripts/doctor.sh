@@ -160,9 +160,12 @@ cask_app_gone() {
     return 1
 }
 
-# Quoted tokens from the Brewfile (`brew "foo"`, `cask "tap/bar"`).
+# Quoted tokens from one or more Brewfiles (`brew "foo"`, `cask "tap/bar"`).
 brewfile_kind() {
-    awk -v kind="$1" '
+    _kind="$1"
+    shift
+    [ "$#" -gt 0 ] || return 0
+    awk -v kind="$_kind" '
         $1 == kind {
             name = $2
             gsub(/"/, "", name)
@@ -170,7 +173,7 @@ brewfile_kind() {
             n = split(name, a, "/")
             print a[n]
         }
-    ' "$DOTFILES_DIR/config/Brewfile"
+    ' "$@"
 }
 
 printf '\n'
@@ -227,7 +230,7 @@ if [ -s "$_age_key" ]; then
         warn "age key is mode ${_perm:-unknown}" "chmod 600 $_age_key"
     fi
 else
-    bad "age key is missing" "private encrypted files won't apply — copy it from Bitwarden"
+    bad "age key is missing" "private encrypted files won't apply — copy it from your password manager"
 fi
 
 if command -v chezmoi >/dev/null 2>&1; then
@@ -357,6 +360,9 @@ if command -v brew >/dev/null 2>&1; then
     _inst_f="$(printf '%s\n' "$_vers_f" | awk '{print $1}')"
     _inst_c="$(printf '%s\n' "$_vers_c" | awk '{print $1}')"
 
+    _brewfiles=("$DOTFILES_DIR/config/Brewfile")
+    [ -f "$HOME/.dotfiles-private/Brewfile" ] && _brewfiles+=("$HOME/.dotfiles-private/Brewfile")
+
     _ok_f="" _miss_f=""
     while IFS= read -r _p; do
         [ -n "$_p" ] || continue
@@ -366,7 +372,7 @@ if command -v brew >/dev/null 2>&1; then
             _miss_f="${_miss_f}${_p} "
         fi
     done <<EOF
-$(brewfile_kind brew)
+$(brewfile_kind brew "${_brewfiles[@]}")
 EOF
 
     _ok_c="" _miss_c="" _ghost_c="" _disk_c="" _left_c=""
@@ -382,7 +388,7 @@ EOF
             _miss_c="${_miss_c}${_p} "
         fi
     done <<EOF
-$(brewfile_kind cask)
+$(brewfile_kind cask "${_brewfiles[@]}")
 EOF
 
     if [ -n "$_miss_c" ] && [ -f "$DOTFILES_DIR/scripts/cask-present.py" ]; then
@@ -395,7 +401,7 @@ EOF
                 *) _still="${_still}${_p} " ;;
             esac
         done <<EOF
-$(python3 "$DOTFILES_DIR/scripts/cask-present.py" --classify --brewfile "$DOTFILES_DIR/config/Brewfile" $_miss_c 2>/dev/null || true)
+$(python3 "$DOTFILES_DIR/scripts/cask-present.py" --classify "${_brewfiles[@]/#/--brewfile=}" $_miss_c 2>/dev/null || true)
 EOF
         _miss_c="$_still"
     fi
@@ -414,7 +420,9 @@ EOF
         _miss_any=1
     fi
     if [ "$_miss_any" -eq 1 ]; then
-        ui_note "brew bundle install --file=$DOTFILES_DIR/config/Brewfile"
+        for _bf in "${_brewfiles[@]}"; do
+            ui_note "brew bundle install --file=$_bf"
+        done
     fi
     if [ -n "$_left_c" ]; then
         pkg_table warn "cask  leftovers, app is gone" "$_left_c"
@@ -440,9 +448,6 @@ if command -v asdf >/dev/null 2>&1 && [ -f "$HOME/.tool-versions" ]; then
                  "asdf plugin add $_tool && asdf install $_tool $_version"
         fi
     done < "$HOME/.tool-versions"
-elif [ ! -f "$HOME/.tool-versions" ]; then
-    warn "~/.tool-versions is not applied" \
-         "chezmoi init --apply --source $DOTFILES_DIR"
 fi
 
 # ---------------------------------------------------------------- Summary ---

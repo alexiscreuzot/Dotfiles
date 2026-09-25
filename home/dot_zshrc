@@ -40,10 +40,3 @@ command -v zoxide >/dev/null 2>&1 && eval "$(zoxide init zsh)"
 _omz_highlight="${HOMEBREW_PREFIX:-/opt/homebrew}/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
 [ -f "$_omz_highlight" ] && source "$_omz_highlight"
 unset _omz_highlight
-
-# >>> Magnitude CLI PATH >>>
-case "$PATH" in
-  "$HOME/.magnitude/bin"|"$HOME/.magnitude/bin":*) ;;
-  *) export PATH="$HOME/.magnitude/bin:$PATH" ;;
-esac
-# <<< Magnitude CLI PATH <<<

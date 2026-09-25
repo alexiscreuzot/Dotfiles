@@ -63,6 +63,9 @@ Any chezmoi source tree works. Optional pieces:
 - `dot_zshrc.private` for private shell setup
 - `doctor.sh` for extra checks
 - `agents/` with `symlink_` entries for skills
+- `Brewfile`, with a one-line run script that calls `scripts/brew-bundle.sh`
+- a macOS defaults run script for your Dock and apps
+- `cursor/` for editor settings, linked with `symlink_` entries
 
 Tokens live in `~/.secrets`, never in a project `.env`. `pchezmoi edit ~/.secrets` decrypts, edits, and re-encrypts.
 
@@ -74,20 +77,18 @@ home/                       what chezmoi applies to ~
   dot_zshrc                 ~/.zshrc
   dot_gitconfig.tmpl        ~/.gitconfig
   dot_tmux.conf             ~/.tmux.conf
-  dot_tool-versions         ~/.tool-versions
   dot_local/bin/            dots
   private_dot_ssh/config    ~/.ssh/config
   dot_config/gh/            ~/.config/gh/
   run_*                     brew bundle, oh-my-zsh, macOS defaults, private repo
 config/                     read in place, never copied
-  Brewfile                  formulae, and casks unless you skip apps
-  cursor/                   Cursor settings and keybindings (symlinked)
+  Brewfile                  the shared command-line tools
   path · aliases · functions
-scripts/                    bootstrap, doctor, shared terminal UI
+scripts/                    bootstrap, doctor, brew-bundle.sh, shared terminal UI
 assets/                     README images
 ```
 
-In `home/`, `dot_` becomes a dotfile, `private_` locks the file down. Apply also installs oh-my-zsh, runs `brew bundle` when the Brewfile changes, and sets macOS defaults when that script changes. The Brewfile, macOS defaults, and Cursor settings are the shared base. Fork the repo if you want your own.
+In `home/`, `dot_` becomes a dotfile, `private_` locks the file down. Apply also installs oh-my-zsh, runs `brew bundle` when the Brewfile changes, and sets generic macOS defaults when that script changes. The public base stays small. Apps, Dock pins, and editor settings belong in your private repo.
 
 ## Shell
 
@@ -95,9 +96,9 @@ In `home/`, `dot_` becomes a dotfile, `private_` locks the file down. Apply also
 
 | Command | Does |
 | --- | --- |
-| `jira get\|create\|edit` | Forum Jira. Tokens live in `~/.secrets`. |
-| `xc` | Open the project in the current directory |
-| `xcclean` | Delete DerivedData, after showing how much it frees |
-| `sim` | Pick an iOS simulator and boot it |
-| `ai` | MLX model server plus Open WebUI |
-| `zed` / `sm` | Open a file in Zed |
+| `dots` | Pull, apply, and push both repos |
+| `doctor` | Report what is off |
+| `pchezmoi` | chezmoi pointed at your private repo |
+| `o` | Open the current directory, or the path you pass |
+| `size` | Size of a file or directory |
+| `retag` / `delete_git_tag` | Move or remove a git tag, locally and on the remote |

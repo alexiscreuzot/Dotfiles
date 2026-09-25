@@ -163,13 +163,14 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--skip", action="store_true")
     parser.add_argument("--classify", action="store_true")
-    parser.add_argument("--brewfile")
+    parser.add_argument("--brewfile", action="append", default=[])
     parser.add_argument("casks", nargs="*")
     args = parser.parse_args()
 
     names = list(args.casks)
-    if args.brewfile:
-        names = brewfile_casks(args.brewfile) if not names else names
+    if not names:
+        for path in args.brewfile:
+            names.extend(brewfile_casks(path))
 
     listed = brew_listed_casks()
     lookup = index_casks(brew_info(names))

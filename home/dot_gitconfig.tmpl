@@ -6,8 +6,6 @@
 [user]
 	name = {{ .name }}
 	email = {{ .email }}
-[core]
-    editor = zed --wait
 [url "git@github.com:"]
 	insteadOf = https://github.com/
 {{ if stat (joinPath .chezmoi.homeDir ".local/bin/origin") -}}

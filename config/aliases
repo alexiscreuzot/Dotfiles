@@ -2,7 +2,6 @@
 #   ------------------------------------------------------------
 
 # Shortcuts
-alias dev="cd ~/Developer/"
 alias doctor="~/.dotfiles/scripts/doctor.sh"
 alias g="git"
 alias h="history"
@@ -16,15 +15,6 @@ if command -v eza > /dev/null; then
     alias la="eza -la --group-directories-first --git"
     alias lt="eza --tree --level=2"
 fi
-
-# Bundle
-alias bi="bundle install"
-alias be="bundle exec"
-alias bef="bundle exec fastlane"
-alias serve="bundle exec jekyll serve"
-
-# Editors
-alias sm='zed'
 
 # IP addresses
 alias ip="dig +short myip.opendns.com @resolver1.opendns.com"

@@ -8,7 +8,7 @@ main() {
 
 DOTFILES_DIR="$HOME/.dotfiles"
 REPO_SSH="git@github.com:alexiscreuzot/Dotfiles.git"
-DOTFILES_STEPS=9
+DOTFILES_STEPS=8
 DOTFILES_STEP=0
 
 # --- UI (keep in sync with ui.sh; inlined so a curled copy still looks right) ---
@@ -212,14 +212,6 @@ formula_ok() {
     brew list --formula "$1" >/dev/null 2>&1
 }
 
-cask_ok() {
-    brew list --cask "$1" >/dev/null 2>&1
-}
-
-app_ok() {
-    [ -d "/Applications/$1.app" ] || [ -d "$HOME/Applications/$1.app" ]
-}
-
 ensure_formula() {
     _name="$1"
     if formula_ok "$_name"; then
@@ -316,20 +308,6 @@ ensure_formula git
 ensure_formula gh
 ensure_formula chezmoi
 ensure_formula age
-
-ui_step "Bitwarden"
-if app_ok Bitwarden || cask_ok bitwarden; then
-    ui_ok "already installed"
-else
-    ui_info "installing Bitwarden"
-    if brew install --cask --quiet bitwarden; then
-        ui_ok "installed"
-    elif app_ok Bitwarden; then
-        ui_warn "brew reported an error, but Bitwarden.app is present — continuing"
-    else
-        ui_warn "Bitwarden failed to install — you can add it later from brew or the App Store"
-    fi
-fi
 
 ui_step "GitHub SSH"
 if github_ssh_ok; then
