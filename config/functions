@@ -55,11 +55,7 @@ retag() {
 
     TAG=$1
 
-    echo "Deleting local tag: $TAG"
-    git tag -d "$TAG"
-
-    echo "Deleting remote tag: $TAG"
-    git push origin :refs/tags/"$TAG"
+    delete_git_tag "$TAG"
 
     echo "Creating new tag: $TAG on latest commit"
     git tag "$TAG"

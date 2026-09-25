@@ -1,20 +1,8 @@
-#   Path 
-#   ------------------------------------------------------------
-# System paths (make sure these are first to avoid overriding system binaries)
-export PATH="/usr/bin:/bin:/usr/sbin:/sbin"
-export PATH="/opt/homebrew/bin:$PATH"
-export PATH="/usr/local/bin:/usr/local/sbin:/usr/local/git/bin:/usr/local/share/npm/bin:/opt/local/bin:/opt/local/sbin:$PATH"
-
 # Load secrets — keep this file out of git
 [ -f "$HOME/.secrets" ] && source "$HOME/.secrets"
 
-# Homebrew configuration
-if [ -f /opt/homebrew/bin/brew ]; then
+if [ -x /opt/homebrew/bin/brew ]; then
   eval "$(/opt/homebrew/bin/brew shellenv)"
-fi
-
-# Start SSH agent if not running
-if [ -z "$SSH_AUTH_SOCK" ]; then
-  eval "$(ssh-agent -s)" > /dev/null
-  [ -f ~/.ssh/id_ed25519 ] && ssh-add --apple-use-keychain ~/.ssh/id_ed25519 2>/dev/null
+elif [ -x /usr/local/bin/brew ]; then
+  eval "$(/usr/local/bin/brew shellenv)"
 fi

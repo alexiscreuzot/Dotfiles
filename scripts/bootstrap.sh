@@ -130,52 +130,14 @@ fi
 
 ui_step "Apply"
 ui_info "chezmoi writes configs, then brew bundle and macOS defaults"
-# source-path exits 0 even when the directory does not exist (the default is
-# ~/.local/share/chezmoi). Only skip init when that path is a real checkout.
-_src="$(chezmoi source-path 2>/dev/null || true)"
-if [ -d "$_src" ] && [ -f "$_src/.chezmoi.toml.tmpl" ]; then
-    ui_info "chezmoi already initialized — applying"
-    if chezmoi apply --source "$DOTFILES_DIR"; then
-        ui_ok "applied"
-    else
-        ui_warn "apply reported errors — already-installed apps are usually why"
-        ui_note "re-run anytime; finished work is skipped"
-    fi
+if chezmoi apply --source "$DOTFILES_DIR"; then
+    ui_ok "applied"
 else
-    ui_info "first apply — this can take a while"
-    if chezmoi init --apply --source "$DOTFILES_DIR"; then
-        ui_ok "applied"
-    else
-        ui_warn "apply reported errors — already-installed apps are usually why"
-        ui_note "re-run anytime; finished work is skipped"
-    fi
+    ui_warn "apply reported errors — already-installed apps are usually why"
+    ui_note "re-run anytime; finished work is skipped"
 fi
 
 ui_step "Shell"
-ui_info "making sure ~/.zshrc and aliases are in place"
-
-if chezmoi apply --source "$DOTFILES_DIR" "$HOME/.zshrc"; then
-    ui_ok "~/.zshrc  applied"
-else
-    ui_warn "chezmoi could not write ~/.zshrc — checking what's there"
-fi
-
-if [ -f "$HOME/.zshrc" ]; then
-    ui_ok "~/.zshrc  present"
-else
-    ui_fail "~/.zshrc is missing — aliases will not load"
-fi
-
-_frag_ok=1
-for _frag in path aliases functions; do
-    if [ -f "$DOTFILES_DIR/config/$_frag" ]; then
-        ui_ok "$_frag  $DOTFILES_DIR/config/$_frag"
-    else
-        ui_fail "$_frag  missing from $DOTFILES_DIR/config"
-        _frag_ok=0
-    fi
-done
-
 _login_shell="$(dscl . -read "/Users/$USER" UserShell 2>/dev/null | awk '{print $2}')"
 if [ "$_login_shell" = "/bin/zsh" ] || [ "$_login_shell" = "/usr/local/bin/zsh" ] || \
    [ "$_login_shell" = "/opt/homebrew/bin/zsh" ]; then
@@ -186,14 +148,6 @@ else
         ui_ok "login shell  /bin/zsh"
     else
         ui_warn "could not change login shell — you can run:  chsh -s /bin/zsh"
-    fi
-fi
-
-if [ "$_frag_ok" -eq 1 ] && [ -f "$HOME/.zshrc" ]; then
-    if zsh -c 'source "$HOME/.zshrc" >/dev/null 2>&1 && alias g' >/dev/null 2>&1; then
-        ui_ok "aliases load  g → git"
-    else
-        ui_warn "could not pre-check aliases — they should still load in the new shell"
     fi
 fi
 

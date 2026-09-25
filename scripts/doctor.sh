@@ -7,22 +7,6 @@ DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")/.." && pwd)"
 # shellcheck source=ui.sh
 . "$DOTFILES_DIR/scripts/ui.sh"
 
-load_brew() {
-    if command -v brew >/dev/null 2>&1; then
-        eval "$(brew shellenv)"
-        return 0
-    fi
-    if [ -x /opt/homebrew/bin/brew ]; then
-        eval "$(/opt/homebrew/bin/brew shellenv)"
-        return 0
-    fi
-    if [ -x /usr/local/bin/brew ]; then
-        eval "$(/usr/local/bin/brew shellenv)"
-        return 0
-    fi
-    return 1
-}
-
 load_brew || true
 
 PASS=0
