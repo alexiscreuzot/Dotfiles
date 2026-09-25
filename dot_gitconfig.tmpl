@@ -4,15 +4,17 @@
 	smudge = git-lfs smudge -- %f
 	process = git-lfs filter-process
 [user]
-	name = Alexis Creuzot
-	email = alexis.creuzot@gmail.com
+	name = {{ .name }}
+	email = {{ .email }}
 [core]
     editor = zed --wait
 [url "git@github.com:"]
 	insteadOf = https://github.com/
+{{ if stat (joinPath .chezmoi.homeDir ".local/bin/origin") -}}
 [credential "https://origin.cursor.com/git"]
 	helper = 
 	helper = !{{ .chezmoi.homeDir }}/.local/bin/origin credential-helper
 [credential "https://origin.cursor.com"]
 	helper = 
 	helper = !{{ .chezmoi.homeDir }}/.local/bin/origin credential-helper
+{{ end -}}

@@ -24,7 +24,7 @@ if [ -n "$_missing" ]; then
     ui_header
     ui_fail "missing tools:$_missing"
     ui_note "run install.sh first — it will skip anything you already have"
-    ui_note "~/Developer/alexiscreuzot/Dotfiles/install.sh"
+    ui_note "~/.dotfiles/install.sh"
     exit 1
 fi
 

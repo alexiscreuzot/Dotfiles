@@ -1,5 +1,8 @@
-sourceDir = "{{ .chezmoi.homeDir }}/Developer/Dotfiles"
+sourceDir = "{{ .chezmoi.homeDir }}/.dotfiles"
 
+{{- $github_user := promptStringOnce . "github_user" "GitHub username" (env "DOTFILES_GITHUB_USER") }}
+{{- $name := promptStringOnce . "name" "Name for git commits" (env "DOTFILES_NAME") }}
+{{- $email := promptStringOnce . "email" "Email for git commits" (env "DOTFILES_EMAIL") }}
 {{- $apps := promptBoolOnce . "apps" "Install GUI apps from the Brewfile" true }}
 {{- $macos := promptBoolOnce . "macos" "Apply macOS defaults (Finder, keyboard, Dock)" true }}
 {{- $private := promptBoolOnce . "private" "Set up the private dotfiles (agents, secrets, router)" true }}
@@ -9,6 +12,9 @@ sourceDir = "{{ .chezmoi.homeDir }}/Developer/Dotfiles"
     args = ["--wait"]
 
 [data]
+    github_user = {{ $github_user | quote }}
+    name = {{ $name | quote }}
+    email = {{ $email | quote }}
     apps = {{ $apps }}
     macos = {{ $macos }}
     private = {{ $private }}

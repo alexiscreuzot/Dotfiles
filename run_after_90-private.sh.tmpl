@@ -6,8 +6,8 @@ echo "private dotfiles declined — chezmoi init --prompt to change this"
 exit 0
 {{ end }}
 
-REPO="git@github.com:alexiscreuzot/Dotfiles-private.git"
-SRC="$HOME/Developer/alexiscreuzot/Dotfiles-private"
+REPO="git@github.com:{{ .github_user }}/Dotfiles-private.git"
+SRC="$HOME/.dotfiles-private"
 CFG="$HOME/.config/chezmoi-private/chezmoi.toml"
 STATE="$HOME/.config/chezmoi-private/chezmoistate.boltdb"
 
@@ -16,7 +16,10 @@ if [ ! -d "$SRC/.git" ]; then
         echo "dotfiles-private: $SRC exists but is not a checkout — leaving it alone"
         exit 0
     fi
-    mkdir -p "$(dirname "$SRC")"
+    if ! git ls-remote "$REPO" >/dev/null 2>&1; then
+        echo "no $REPO — private dotfiles skipped"
+        exit 0
+    fi
     if ! git clone "$REPO" "$SRC"; then
         echo "warning: could not clone $REPO — private dotfiles skipped"
         exit 0

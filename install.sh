@@ -1,11 +1,12 @@
 #!/bin/bash
-# Fresh-Mac entry point (quoted ?$(date +%s) busts GitHub's raw CDN cache;
-# zsh treats an unquoted ? as a glob and errors with "no matches found"):
-#   sh -c "$(curl -fsSL "https://raw.githubusercontent.com/alexiscreuzot/Dotfiles/master/install.sh?$(date +%s)")"
+# Fresh-Mac entry point:
+#   curl -fsSL alexiscreuzot.com/dots | sh
 set -e
 
-DOTFILES_DIR="$HOME/Developer/alexiscreuzot/Dotfiles"
-DOTFILES_LINK="$HOME/Developer/Dotfiles"
+main() {
+[ -t 0 ] || exec </dev/tty
+
+DOTFILES_DIR="$HOME/.dotfiles"
 REPO_SSH="git@github.com:alexiscreuzot/Dotfiles.git"
 DOTFILES_STEPS=9
 DOTFILES_STEP=0
@@ -268,7 +269,7 @@ ensure_ssh_key() {
     fi
     mkdir -p "$HOME/.ssh"
     chmod 700 "$HOME/.ssh"
-    ssh-keygen -t ed25519 -f "$HOME/.ssh/id_ed25519" -N "" -C "alexis.creuzot@gmail.com"
+    ssh-keygen -t ed25519 -f "$HOME/.ssh/id_ed25519" -N "" -C "$USER@$(hostname -s)"
     ui_ok "created ~/.ssh/id_ed25519"
 }
 
@@ -388,7 +389,6 @@ else
 fi
 
 ui_step "Clone"
-mkdir -p "$HOME/Developer/alexiscreuzot"
 if [ -d "$DOTFILES_DIR/.git" ]; then
     ui_ok "already cloned  $DOTFILES_DIR"
     ui_info "pulling latest"
@@ -415,10 +415,19 @@ else
         exit 1
     fi
 fi
-if [ -L "$DOTFILES_LINK" ] || [ ! -e "$DOTFILES_LINK" ]; then
-    ln -sfn alexiscreuzot/Dotfiles "$DOTFILES_LINK"
-    ui_ok "link  $DOTFILES_LINK → alexiscreuzot/Dotfiles"
+
+if gh_logged_in; then
+    _id="$(gh api user --jq '[.login // "", .name // "", .email // ""] | @tsv' 2>/dev/null || true)"
+    DOTFILES_GITHUB_USER="$(printf '%s' "$_id" | cut -f1)"
+    DOTFILES_NAME="$(printf '%s' "$_id" | cut -f2)"
+    DOTFILES_EMAIL="$(printf '%s' "$_id" | cut -f3)"
+    if [ -z "${DOTFILES_EMAIL:-}" ]; then
+        DOTFILES_EMAIL="$(git config --global user.email 2>/dev/null || true)"
+    fi
+    export DOTFILES_GITHUB_USER DOTFILES_NAME DOTFILES_EMAIL
 fi
 
 export DOTFILES_STEPS DOTFILES_STEP DOTFILES_FROM_INSTALL=1
 exec "$DOTFILES_DIR/bootstrap.sh"
+}
+main "$@"

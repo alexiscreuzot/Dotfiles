@@ -9,14 +9,14 @@
 <br/>
 
 ```bash
-sh -c "$(curl -fsSL "https://raw.githubusercontent.com/alexiscreuzot/Dotfiles/master/install.sh?$(date +%s)")"
+curl -fsSL alexiscreuzot.com/dots | sh
 ```
 
 </div>
 
-The checkout lands at `~/Developer/alexiscreuzot/Dotfiles`, with a symlink at `~/Developer/Dotfiles`. Install asks for the Mac password once, then one browser approval for GitHub (`gh` creates the SSH key and uploads it). The age key is one paste from Bitwarden into `~/.config/chezmoi/key.txt`, and only if you set up the private repo.
+The checkout lands at `~/.dotfiles`. Install asks for the Mac password once, then one browser approval for GitHub (`gh` creates the SSH key and uploads it). It reads your GitHub username, name, and email, and you confirm them. The age key is one paste from Bitwarden into `~/.config/chezmoi/key.txt`, and only if you set up a private repo.
 
-The first `chezmoi init` asks three questions and remembers them: GUI apps, macOS defaults, and the private repo. `chezmoi init --prompt` asks again.
+The first `chezmoi init` also asks three questions and remembers them: GUI apps, macOS defaults, and the private repo. `chezmoi init --prompt` asks again. The Brewfile, macOS defaults, and Cursor settings are the shared base. Fork the repo if you want your own.
 
 ```mermaid
 flowchart TD
@@ -27,8 +27,7 @@ flowchart TD
   One browser approval
   gh creates the SSH key and uploads it"]
   clone["Clone
-  ~/Developer/alexiscreuzot/Dotfiles
-  linked from ~/Developer/Dotfiles"]
+  ~/.dotfiles"]
   choices["Choices
   GUI apps, macOS defaults, private repo
   Age key paste only if private is on"]
@@ -65,9 +64,11 @@ dots doctor     # report only
 
 ## Private
 
-[Dotfiles-private](https://github.com/alexiscreuzot/Dotfiles-private) is a second chezmoi source at `~/Developer/alexiscreuzot/Dotfiles-private`, with its own config in `~/.config/chezmoi-private/`. Apply clones it. Without access, apply warns and continues.
+Apply looks for `<your GitHub user>/Dotfiles-private` and clones it to `~/.dotfiles-private` when it exists. No repo, or no access, and it skips. Its config lives in `~/.config/chezmoi-private/`. `dots` pulls the public repo but does not push to it unless you own that checkout.
 
-It holds `~/.secrets`, Zed, the Jev router, and invoices. Its `agents/` folder is symlinked into `~/.cursor` and `~/.agents`. `~/.zshrc` sources `~/.zshrc.private` from there (`pchezmoi`, the `jev-*` aliases).
+Any chezmoi source tree works. Optional pieces: `.chezmoi.toml.tmpl` for age encryption, `dot_zshrc.private` for private shell setup, `doctor.sh` for extra checks, and an `agents/` folder with `symlink_` entries for skills. `~/.zshrc` sources `~/.zshrc.private` when it is there (`pchezmoi` is in the shared shell).
+
+The private repo that ships with this machine holds `~/.secrets`, Zed, the Jev router, and invoices. Its `agents/` folder is symlinked into `~/.cursor` and `~/.agents`.
 
 ```bash
 pchezmoi edit ~/.secrets       # decrypt, edit, re-encrypt

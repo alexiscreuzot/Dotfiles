@@ -261,7 +261,7 @@ fi
 
 ui_section "Private"
 
-_priv="$HOME/Developer/alexiscreuzot/Dotfiles-private"
+_priv="$HOME/.dotfiles-private"
 _pcfg="$HOME/.config/chezmoi-private/chezmoi.toml"
 _pstate="$HOME/.config/chezmoi-private/chezmoistate.boltdb"
 

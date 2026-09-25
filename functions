@@ -346,3 +346,11 @@ sim() {
   xcrun simctl boot "${udids[$REPLY]}" 2> /dev/null
   open -a Simulator
 }
+
+pchezmoi() {
+  chezmoi \
+    --config "$HOME/.config/chezmoi-private/chezmoi.toml" \
+    --persistent-state "$HOME/.config/chezmoi-private/chezmoistate.boltdb" \
+    --source "$HOME/.dotfiles-private" \
+    "$@"
+}
