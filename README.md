@@ -1,6 +1,6 @@
 <div align="center">
 
-![dotfiles](assets/hero.svg)
+![dotfiles](assets/hero-v2.svg)
 
 ```bash
 curl -fsSL alexiscreuzot.com/dots | sh
@@ -16,13 +16,13 @@ chezmoi · zsh · Homebrew · age
 2. Approve GitHub in the browser, then confirm your name and email.
 3. Choose apps, macOS defaults, and a private repo. If private is on, paste your age key.
 
-![install flow](assets/install-flow.svg)
+![install flow](assets/install-flow-v2.svg)
 
 ## `dots`
 
 Syncs both repos. Run it after you change anything, on any Mac.
 
-![dots](assets/dots.svg)
+![dots](assets/dots-v2.svg)
 
 | Phase | Does |
 | --- | --- |
@@ -38,7 +38,7 @@ Templates such as `~/.gitconfig` can't be pulled back, so edit those in the repo
 
 Reports what is off and changes nothing. It checks tooling, GitHub, both repos, agent links, the shell, Brewfile packages, and `~/.tool-versions`.
 
-![dots doctor](assets/doctor.svg)
+![dots doctor](assets/doctor-v2.svg)
 
 `✓` is fine. `!` is worth a look, with the fix on the line below. `✗` is broken and makes the exit code 1.
 
