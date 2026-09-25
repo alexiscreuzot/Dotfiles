@@ -62,6 +62,7 @@ else
     ui_note "it will be written to  $_age_key"
     ui_menu "How do you want to provide the age key?" "" \
         "Paste it here" \
+        "Generate a new key" \
         "I already saved it to the file" \
         "Skip for now"
     case "$UI_CHOICE" in
@@ -98,6 +99,19 @@ else
             fi
             ;;
         2)
+            mkdir -p "$HOME/.config/chezmoi"
+            umask 077
+            rm -f "$_age_key"
+            if age-keygen -o "$_age_key" 2>/dev/null; then
+                chmod 600 "$_age_key"
+                ui_ok "saved  $_age_key"
+                ui_note "public key: $(age-keygen -y "$_age_key")"
+                ui_note "save the secret key in your password manager"
+            else
+                ui_fail "could not generate an age key"
+            fi
+            ;;
+        3)
             if [ -s "$_age_key" ]; then
                 chmod 600 "$_age_key"
                 ui_ok "key is in place"
