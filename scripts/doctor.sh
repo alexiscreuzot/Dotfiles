@@ -319,26 +319,12 @@ else
     bad "~/.zshrc is missing" "chezmoi apply --source $DOTFILES_DIR ~/.zshrc"
 fi
 
-if [ -d "$HOME/.oh-my-zsh" ]; then
-    _omz_owner="$(stat -f %Su "$HOME/.oh-my-zsh" 2>/dev/null || true)"
-    if [ -n "$_omz_owner" ] && [ "$_omz_owner" != "$(id -un)" ]; then
-        warn "oh-my-zsh is owned by $_omz_owner" \
-            "bash $DOTFILES_DIR/scripts/bootstrap.sh"
-    fi
-fi
-
 _prompt=""
-if [ -f "$HOME/.oh-my-zsh/oh-my-zsh.sh" ]; then
-    _prompt="$(join oh-my-zsh "$(git -C "$HOME/.oh-my-zsh" rev-parse --short HEAD 2>/dev/null || true)")"
+_spaceship="${HOMEBREW_PREFIX:-/opt/homebrew}/opt/spaceship/spaceship.zsh"
+if [ -f "$_spaceship" ]; then
+    _prompt="Spaceship"
 else
-    warn "oh-my-zsh is not installed" "bash $DOTFILES_DIR/home/run_once_after_20-oh-my-zsh.sh"
-fi
-
-_theme="$HOME/.oh-my-zsh/custom/themes/spaceship.zsh-theme"
-if [ -f "$_theme" ]; then
-    if [ -n "$_prompt" ]; then _prompt="$_prompt · Spaceship"; else _prompt="Spaceship"; fi
-else
-    warn "Spaceship theme is not linked" "bash $DOTFILES_DIR/home/run_once_after_20-oh-my-zsh.sh"
+    warn "Spaceship is not installed" "brew install spaceship"
 fi
 
 for _plugin in zsh-autosuggestions zsh-syntax-highlighting; do

@@ -40,6 +40,6 @@
     <text x="44" y="364">~/.dotfiles</text><text x="44" y="384">public base</text>
     <text x="250" y="364">optional age key</text><text x="250" y="384">private files</text>
     <text x="456" y="364">chezmoi + Brewfile</text><text x="456" y="384">macOS defaults</text>
-    <text x="662" y="364">~/.zshrc</text><text x="662" y="384">oh-my-zsh</text>
+    <text x="662" y="364">~/.zshrc</text><text x="662" y="384">Spaceship</text>
   </g>
 </svg>

@@ -242,7 +242,7 @@ dotfiles_sudo() {
     sudo "$@"
 }
 
-# Root-owned files in $HOME (oh-my-zsh installed with sudo) break later ln/mkdir.
+# Root-owned files in $HOME break later ln/mkdir.
 reclaim_if_foreign() {
     _path="$1"
     [ -e "$_path" ] || return 0

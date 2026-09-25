@@ -32,7 +32,6 @@ if [ -z "${DOTFILES_FROM_INSTALL:-}" ]; then
     ui_header
 fi
 keep_sudo
-reclaim_if_foreign "$HOME/.oh-my-zsh"
 reclaim_if_foreign "$HOME/.config/chezmoi"
 
 _cfg="$HOME/.config/chezmoi/chezmoi.toml"
@@ -130,7 +129,7 @@ fi
 fi
 
 ui_step "Apply"
-ui_info "chezmoi writes configs, then brew bundle, oh-my-zsh, and macOS defaults"
+ui_info "chezmoi writes configs, then brew bundle and macOS defaults"
 # source-path exits 0 even when the directory does not exist (the default is
 # ~/.local/share/chezmoi). Only skip init when that path is a real checkout.
 _src="$(chezmoi source-path 2>/dev/null || true)"
@@ -153,7 +152,7 @@ else
 fi
 
 ui_step "Shell"
-ui_info "making sure ~/.zshrc, oh-my-zsh, and aliases are in place"
+ui_info "making sure ~/.zshrc and aliases are in place"
 
 if chezmoi apply --source "$DOTFILES_DIR" "$HOME/.zshrc"; then
     ui_ok "~/.zshrc  applied"
@@ -176,19 +175,6 @@ for _frag in path aliases functions; do
         _frag_ok=0
     fi
 done
-
-bash "$DOTFILES_DIR/home/run_once_after_20-oh-my-zsh.sh" || true
-if [ -f "$HOME/.oh-my-zsh/oh-my-zsh.sh" ]; then
-    ui_ok "oh-my-zsh  installed"
-else
-    ui_warn "oh-my-zsh is not installed yet"
-fi
-if [ -L "$HOME/.oh-my-zsh/custom/themes/spaceship.zsh-theme" ] || \
-   [ -f "$HOME/.oh-my-zsh/custom/themes/spaceship.zsh-theme" ]; then
-    ui_ok "Spaceship theme  linked"
-else
-    ui_warn "Spaceship theme is not linked — prompt will fall back"
-fi
 
 _login_shell="$(dscl . -read "/Users/$USER" UserShell 2>/dev/null | awk '{print $2}')"
 if [ "$_login_shell" = "/bin/zsh" ] || [ "$_login_shell" = "/usr/local/bin/zsh" ] || \
