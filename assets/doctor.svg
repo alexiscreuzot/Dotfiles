@@ -3,7 +3,7 @@
   <circle cx="24" cy="22" r="6" fill="#ff5f57"/>
   <circle cx="44" cy="22" r="6" fill="#febc2e"/>
   <circle cx="64" cy="22" r="6" fill="#28c840"/>
-  <text x="88" y="27" fill="#8b949e" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13">doctor</text>
+  <text x="88" y="27" fill="#8b949e" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13">dots doctor</text>
   <text x="28" y="64" fill="#e6edf3" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="15" font-weight="650">dotfiles doctor</text>
   <text x="28" y="86" fill="#8b949e" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13">says what is off · fixes nothing</text>
   <text x="28" y="126" fill="#8b949e" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13">───  Tooling</text>

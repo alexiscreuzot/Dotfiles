@@ -2,7 +2,6 @@
 #   ------------------------------------------------------------
 
 # Shortcuts
-alias doctor="~/.dotfiles/scripts/doctor.sh"
 alias g="git"
 alias h="history"
 alias j="jobs"
