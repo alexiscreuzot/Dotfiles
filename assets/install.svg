@@ -1,66 +1,45 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="860" height="390" viewBox="0 0 860 390" role="img" aria-label="Install flow: tools, GitHub approval, clone, choices, and apply">
-  <rect width="860" height="390" rx="12" fill="#0d1117" stroke="#30363d"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="500" viewBox="0 0 860 500" role="img" aria-label="Install flow: command line tools, Homebrew, CLI tools, GitHub SSH, clone, private key, apply, and shell">
+  <rect width="860" height="500" rx="12" fill="#0d1117" stroke="#30363d"/>
   <circle cx="24" cy="22" r="6" fill="#ff5f57"/>
   <circle cx="44" cy="22" r="6" fill="#febc2e"/>
   <circle cx="64" cy="22" r="6" fill="#28c840"/>
   <text x="88" y="27" fill="#8b949e" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13">install</text>
 
-  <text x="28" y="68" fill="#e6edf3" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="15" font-weight="650">from a clean Mac to a working one</text>
-  <text x="28" y="91" fill="#8b949e" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13">one command · one browser approval · a few choices</text>
+  <text x="28" y="68" fill="#e6edf3" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="15" font-weight="650">8 steps · already-done work is skipped</text>
 
   <g stroke="#30363d" stroke-width="2" fill="none">
-    <path d="M174 190h28"/>
-    <path d="M338 190h28"/>
-    <path d="M502 190h28"/>
-    <path d="M666 190h28"/>
+    <path d="M208 190h26"/><path d="M414 190h26"/><path d="M620 190h26"/>
+    <path d="M739 252v26H118v14"/>
+    <path d="M208 370h26"/><path d="M414 370h26"/><path d="M620 370h26"/>
   </g>
   <g fill="#8b949e">
-    <path d="m198 184 10 6-10 6z"/>
-    <path d="m362 184 10 6-10 6z"/>
-    <path d="m526 184 10 6-10 6z"/>
-    <path d="m690 184 10 6-10 6z"/>
+    <path d="m224 184 10 6-10 6z"/><path d="m430 184 10 6-10 6z"/><path d="m636 184 10 6-10 6z"/>
+    <path d="m112 292 6 10 6-10z"/>
+    <path d="m224 364 10 6-10 6z"/><path d="m430 364 10 6-10 6z"/><path d="m636 364 10 6-10 6z"/>
   </g>
 
   <g fill="#161b22" stroke="#30363d">
-    <rect x="28" y="128" width="146" height="124" rx="8"/>
-    <rect x="202" y="128" width="136" height="124" rx="8"/>
-    <rect x="366" y="128" width="136" height="124" rx="8"/>
-    <rect x="530" y="128" width="136" height="124" rx="8"/>
-    <rect x="694" y="128" width="138" height="124" rx="8"/>
+    <rect x="28" y="128" width="180" height="124" rx="8"/><rect x="234" y="128" width="180" height="124" rx="8"/>
+    <rect x="440" y="128" width="180" height="124" rx="8"/><rect x="646" y="128" width="186" height="124" rx="8"/>
+    <rect x="28" y="308" width="180" height="124" rx="8"/><rect x="234" y="308" width="180" height="124" rx="8"/>
+    <rect x="440" y="308" width="180" height="124" rx="8"/><rect x="646" y="308" width="186" height="124" rx="8"/>
   </g>
 
   <g fill="#3fb950" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12" font-weight="650">
-    <text x="44" y="157">01  TOOLS</text>
-    <text x="218" y="157">02  GITHUB</text>
-    <text x="382" y="157">03  CLONE</text>
-    <text x="546" y="157">04  CHOICES</text>
-    <text x="710" y="157">05  APPLY</text>
+    <text x="44" y="157">01  COMMAND LINE TOOLS</text><text x="250" y="157">02  HOMEBREW</text>
+    <text x="456" y="157">03  CLI TOOLS</text><text x="662" y="157">04  GITHUB SSH</text>
+    <text x="44" y="337">05  CLONE</text><text x="250" y="337">06  PRIVATE KEY</text>
+    <text x="456" y="337">07  APPLY</text><text x="662" y="337">08  SHELL</text>
   </g>
 
   <g fill="#e6edf3" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13">
-    <text x="44" y="184">Xcode CLT</text>
-    <text x="44" y="204">Homebrew</text>
-    <text x="44" y="224">git · gh · age</text>
-
-    <text x="218" y="184">approve once</text>
-    <text x="218" y="204">SSH key</text>
-    <text x="218" y="224">name + email</text>
-
-    <text x="382" y="184">~/.dotfiles</text>
-    <text x="382" y="204">chezmoi</text>
-    <text x="382" y="224">gets the repo</text>
-
-    <text x="546" y="184">apps</text>
-    <text x="546" y="204">macOS defaults</text>
-    <text x="546" y="224">private repo</text>
-
-    <text x="710" y="184">dotfiles</text>
-    <text x="710" y="204">Brewfile</text>
-    <text x="710" y="224">oh-my-zsh + defaults</text>
+    <text x="44" y="184">Xcode CLT</text><text x="44" y="204">macOS installer</text>
+    <text x="250" y="184">Homebrew</text><text x="250" y="204">package manager</text>
+    <text x="456" y="184">git · gh · chezmoi</text><text x="456" y="204">age</text>
+    <text x="662" y="184">browser approval</text><text x="662" y="204">SSH key upload</text>
+    <text x="44" y="364">~/.dotfiles</text><text x="44" y="384">public base</text>
+    <text x="250" y="364">optional age key</text><text x="250" y="384">private files</text>
+    <text x="456" y="364">chezmoi + Brewfile</text><text x="456" y="384">macOS defaults</text>
+    <text x="662" y="364">~/.zshrc</text><text x="662" y="384">oh-my-zsh</text>
   </g>
-
-  <rect x="28" y="292" width="804" height="52" rx="8" fill="#161b22" stroke="#30363d"/>
-  <text x="48" y="324" fill="#3fb950" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="16">$</text>
-  <text x="72" y="324" fill="#e6edf3" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="16">curl -fsSL alexiscreuzot.com/dots | sh</text>
-  <rect x="438" y="308" width="9" height="19" rx="1" fill="#79c0ff"/>
 </svg>
