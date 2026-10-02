@@ -297,6 +297,7 @@ case "$_login_shell" in
     *)     bad "login shell is ${_login_shell:-unknown}" "chsh -s /bin/zsh" ;;
 esac
 
+# shellcheck disable=SC2088  # labels shown to the user, not expanded
 if [ -f "$HOME/.zshrc" ]; then
     ok "~/.zshrc"
 else

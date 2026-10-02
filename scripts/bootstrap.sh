@@ -5,7 +5,9 @@ set -e
 DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")/.." && pwd)"
 
 if [ -z "${DOTFILES_FROM_INSTALL:-}" ]; then
+    # shellcheck disable=SC2034  # read by ui_step in ui.sh
     DOTFILES_STEPS=3
+    # shellcheck disable=SC2034
     DOTFILES_STEP=0
 fi
 
@@ -24,6 +26,7 @@ if [ -n "$_missing" ]; then
     ui_header
     ui_fail "missing tools:$_missing"
     ui_note "run install.sh first — it will skip anything you already have"
+    # shellcheck disable=SC2088  # shown to the user, not expanded
     ui_note "~/.dotfiles/install.sh"
     exit 1
 fi

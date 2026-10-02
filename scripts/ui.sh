@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # Shared terminal UI for install.sh and bootstrap.sh.
 # install.sh inlines these so a curled copy still looks right.
 
