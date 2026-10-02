@@ -58,6 +58,20 @@ doctor.sh                           extra checks for dots doctor
 
 `pchezmoi` is chezmoi for this repo. `pchezmoi add --encrypt ~/.secrets` adds a secret, and `pchezmoi edit ~/.secrets` changes one.
 
+## Agents
+
+Skills, rules, and commands live in the private repo under `agents/`. Apply symlinks them into Cursor and `~/.agents`, so an edit in either place is already a change in the repo, and `dots` takes it to every Mac.
+
+![agents](assets/agents-v1.svg)
+
+```text
+agents/skills/     ~/.cursor/skills · ~/.agents/skills
+agents/rules/      ~/.cursor/rules
+agents/commands/   ~/.cursor/commands
+```
+
+`agents/` is plain text. API keys and tokens, such as `~/.cursor/mcp.json`, go in with `pchezmoi add --encrypt`. The repo holds only the age file, and a Mac without the key skips the private repo.
+
 ## Layout
 
 ```text
