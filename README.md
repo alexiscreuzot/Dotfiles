@@ -62,7 +62,7 @@ doctor.sh                           extra checks for dots doctor
 
 Skills, rules, and commands live in the private repo under `agents/`. Apply symlinks them into Cursor and `~/.agents`, so an edit in either place is already a change in the repo, and `dots` takes it to every Mac.
 
-![agents](assets/agents-v1.svg)
+![agents](assets/agents-v2.svg)
 
 ```text
 agents/skills/     ~/.cursor/skills · ~/.agents/skills
