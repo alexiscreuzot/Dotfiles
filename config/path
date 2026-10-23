@@ -6,3 +6,6 @@ if [ -x /opt/homebrew/bin/brew ]; then
 elif [ -x /usr/local/bin/brew ]; then
   eval "$(/usr/local/bin/brew shellenv)"
 fi
+
+# swiftly: the swift.org toolchain must come before Xcode's swift
+export PATH="$HOME/.swiftly/bin:$PATH"
